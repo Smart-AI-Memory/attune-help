@@ -2,6 +2,38 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.5.1 — 2026-04-12
+
+### Fixed
+
+- **[BLOCKING]** `lookup_simpler` MCP handler created a
+  fresh `LocalFileStorage()` to read depth back instead
+  of using the engine's own storage instance — broke
+  custom storage backends.
+- `list_topics` parameter renamed from `type` to
+  `type_filter` to avoid shadowing the Python builtin.
+- `precursor_warnings` extension and filename maps
+  extracted to module-level constants (`_EXT_TAGS`,
+  `_NAME_TAGS`), reducing the method from 110 to ~10
+  lines.
+- Handlers category-name map consolidated: now imports
+  `_PREFIX_MAP` from `templates.py` instead of
+  re-declaring it.
+- Repeated string-validation boilerplate across all 10
+  MCP handlers extracted into a shared `_require_str()`
+  helper (~30 lines removed).
+- `_auto_detect_renderer` return typed as
+  `Callable[[PopulatedTemplate], str]` instead of `Any`.
+- Added `from __future__ import annotations` to
+  `demos/__init__.py`.
+
+### Tests
+
+- 20 new tests: renderer branches (error/warning/tip,
+  marketplace, CLI plain), `engine.get()` coverage, and
+  MCP handler error-path coverage.
+- Overall coverage: 78% → 84%.
+
 ## 0.5.0 — 2026-04-11
 
 MCP layer catches up to the 0.4 `HelpEngine` public API.

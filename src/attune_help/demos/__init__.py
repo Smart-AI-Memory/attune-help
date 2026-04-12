@@ -5,6 +5,8 @@ and reference templates.  Copy the feature directory into
 your project's ``.help/templates/`` as a starting point.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

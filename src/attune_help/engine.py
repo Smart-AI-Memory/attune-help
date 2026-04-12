@@ -10,7 +10,6 @@ from __future__ import annotations
 import logging
 import threading
 from pathlib import Path
-from typing import Any
 
 from attune_help.progression import populate_progressive
 from attune_help.storage import LocalFileStorage, SessionStorage
@@ -86,6 +85,46 @@ _DEPTH_PROMPTS = {
     0: '\n\n*(concept view — say "tell me more" for step-by-step)*',
     1: '\n\n*(task view — say "tell me more" for full reference)*',
     2: '\n\n*(reference — deepest level; say "simpler" to step back)*',
+}
+
+# Tag maps for precursor_warnings, extracted to module level
+# so the method body stays concise and the maps are testable.
+_EXT_TAGS: dict[str, list[str]] = {
+    ".py": ["python", "imports", "testing", "error-handling"],
+    ".yml": ["ci", "github-actions"],
+    ".yaml": ["ci", "github-actions"],
+    ".json": ["packaging"],
+    ".toml": ["packaging", "python", "publishing"],
+    ".md": ["claude-code"],
+    ".sql": ["database", "migrations"],
+    ".env": ["config", "secrets"],
+    ".cfg": ["config"],
+    ".ini": ["config"],
+    ".js": ["javascript", "testing", "error-handling"],
+    ".jsx": ["javascript", "testing", "error-handling"],
+    ".ts": ["typescript", "javascript", "testing", "error-handling"],
+    ".tsx": ["typescript", "javascript", "testing", "error-handling"],
+    ".rs": ["rust", "testing", "error-handling"],
+    ".go": ["go", "testing", "error-handling"],
+    ".rb": ["ruby", "testing", "error-handling"],
+    ".java": ["java", "testing", "error-handling"],
+}
+
+_NAME_TAGS: dict[str, list[str]] = {
+    "pyproject.toml": ["deps", "publishing", "packaging"],
+    "requirements.txt": ["deps"],
+    "setup.py": ["publishing", "packaging"],
+    "setup.cfg": ["publishing", "packaging"],
+    "config.py": ["config"],
+    "settings.py": ["config"],
+    "models.py": ["database"],
+    "alembic.ini": ["database", "migrations"],
+    "dockerfile": ["ci", "cd"],
+    "docker-compose.yml": ["ci", "cd"],
+    ".gitignore": ["git"],
+    ".env": ["config", "secrets"],
+    ".env.example": ["config", "secrets"],
+    "manifest.in": ["publishing"],
 }
 
 
@@ -289,14 +328,15 @@ class HelpEngine:
 
     def list_topics(
         self,
-        type: str | None = None,
+        type_filter: str | None = None,
         limit: int | None = None,
     ) -> list[str]:
         """Enumerate available topic slugs.
 
         Args:
-            type: Optional type filter (``"concepts"``,
-                ``"tasks"``, ``"references"``, etc.).
+            type_filter: Optional type filter
+                (``"concepts"``, ``"tasks"``,
+                ``"references"``, etc.).
             limit: Optional cap on results.
 
         Returns:
@@ -304,7 +344,7 @@ class HelpEngine:
         """
         from attune_help.discovery import list_topics as _list
 
-        return _list(self.generated_dir, type=type, limit=limit)
+        return _list(self.generated_dir, type_filter=type_filter, limit=limit)
 
     def search(
         self,
@@ -486,48 +526,8 @@ class HelpEngine:
         name = Path(file_path).name.lower()
 
         tags: list[str] = []
-
-        # Extension-based triggers
-        ext_map = {
-            ".py": ["python", "imports", "testing", "error-handling"],
-            ".yml": ["ci", "github-actions"],
-            ".yaml": ["ci", "github-actions"],
-            ".json": ["packaging"],
-            ".toml": ["packaging", "python", "publishing"],
-            ".md": ["claude-code"],
-            ".sql": ["database", "migrations"],
-            ".env": ["config", "secrets"],
-            ".cfg": ["config"],
-            ".ini": ["config"],
-            ".js": ["javascript", "testing", "error-handling"],
-            ".jsx": ["javascript", "testing", "error-handling"],
-            ".ts": ["typescript", "javascript", "testing", "error-handling"],
-            ".tsx": ["typescript", "javascript", "testing", "error-handling"],
-            ".rs": ["rust", "testing", "error-handling"],
-            ".go": ["go", "testing", "error-handling"],
-            ".rb": ["ruby", "testing", "error-handling"],
-            ".java": ["java", "testing", "error-handling"],
-        }
-        tags.extend(ext_map.get(ext, []))
-
-        # Filename-based triggers
-        name_map = {
-            "pyproject.toml": ["deps", "publishing", "packaging"],
-            "requirements.txt": ["deps"],
-            "setup.py": ["publishing", "packaging"],
-            "setup.cfg": ["publishing", "packaging"],
-            "config.py": ["config"],
-            "settings.py": ["config"],
-            "models.py": ["database"],
-            "alembic.ini": ["database", "migrations"],
-            "dockerfile": ["ci", "cd"],
-            "docker-compose.yml": ["ci", "cd"],
-            ".gitignore": ["git"],
-            ".env": ["config", "secrets"],
-            ".env.example": ["config", "secrets"],
-            "manifest.in": ["publishing"],
-        }
-        tags.extend(name_map.get(name, []))
+        tags.extend(_EXT_TAGS.get(ext, []))
+        tags.extend(_NAME_TAGS.get(name, []))
 
         if not tags:
             return []
@@ -577,7 +577,7 @@ class HelpEngine:
         return results
 
     @staticmethod
-    def _auto_detect_renderer() -> Any:
+    def _auto_detect_renderer() -> Callable[[PopulatedTemplate], str]:
         """Detect the best renderer for the current environment.
 
         Priority:

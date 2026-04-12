@@ -29,8 +29,36 @@ logger = logging.getLogger(__name__)
 _VALID_RENDERERS = frozenset(_ENGINE_RENDERERS - {"auto"})
 
 
+def _require_str(
+    args: dict[str, Any],
+    key: str,
+    *,
+    optional: bool = False,
+) -> tuple[str | None, dict[str, Any] | None]:
+    """Validate a required or optional string argument.
+
+    Returns ``(value, None)`` on success, or
+    ``(None, error_dict)`` on failure.
+    """
+    value = args.get(key)
+    if value is None:
+        if optional:
+            return None, None
+        return None, {
+            "success": False,
+            "error": f"{key} is required and must be a string",
+        }
+    if not isinstance(value, str) or not value:
+        label = "a non-empty string" if not optional else "a non-empty string when provided"
+        return None, {
+            "success": False,
+            "error": f"{key} must be {label}",
+        }
+    return value, None
+
+
 class AttuneHelpHandlers:
-    """Async handlers for the 6 attune-help MCP tools.
+    """Async handlers for the attune-help MCP tools.
 
     Holds workspace_root for path containment so user input
     cannot escape the project directory when a user-provided
@@ -80,12 +108,9 @@ class AttuneHelpHandlers:
 
     async def lookup_topic(self, args: dict[str, Any]) -> dict[str, Any]:
         """Progressive depth lookup for a topic."""
-        topic = args.get("topic")
-        if not topic or not isinstance(topic, str):
-            return {
-                "success": False,
-                "error": "topic is required and must be a string",
-            }
+        topic, err = _require_str(args, "topic")
+        if err:
+            return err
 
         # Defensive enum check — the schema declares this enum but not
         # every MCP client enforces schema enums. Rejecting bad input
@@ -185,19 +210,8 @@ class AttuneHelpHandlers:
             prefix = tid.split("-", 1)[0] if "-" in tid else "other"
             grouped.setdefault(prefix, []).append(tid)
 
-        category_names = {
-            "com": "comparisons",
-            "con": "concepts",
-            "err": "errors",
-            "faq": "faqs",
-            "not": "notes",
-            "qui": "quickstarts",
-            "ref": "references",
-            "tas": "tasks",
-            "tip": "tips",
-            "tro": "troubleshooting",
-            "war": "warnings",
-        }
+        # Reuse the canonical prefix→directory map from templates.py
+        from attune_help.templates import _PREFIX_MAP
 
         return {
             "success": True,
@@ -205,19 +219,16 @@ class AttuneHelpHandlers:
             "shown": min(len(ids), limit),
             "tag_filter": tag_filter,
             "categories": {
-                category_names.get(prefix, prefix): sorted(tids)
+                _PREFIX_MAP.get(prefix, prefix): sorted(tids)
                 for prefix, tids in sorted(grouped.items())
             },
         }
 
     async def lookup_warn(self, args: dict[str, Any]) -> dict[str, Any]:
         """Get file-context warnings for a file path."""
-        file_path = args.get("file_path")
-        if not file_path or not isinstance(file_path, str):
-            return {
-                "success": False,
-                "error": "file_path is required and must be a string",
-            }
+        file_path, err = _require_str(args, "file_path")
+        if err:
+            return err
 
         # precursor_warnings() only reads the extension and name,
         # not the file contents — no disk access required. Still
@@ -255,12 +266,9 @@ class AttuneHelpHandlers:
 
     async def lookup_preamble(self, args: dict[str, Any]) -> dict[str, Any]:
         """Get the one-line preamble for a feature."""
-        feature_name = args.get("feature_name")
-        if not feature_name or not isinstance(feature_name, str):
-            return {
-                "success": False,
-                "error": "feature_name is required and must be a string",
-            }
+        feature_name, err = _require_str(args, "feature_name")
+        if err:
+            return err
 
         try:
             engine = self._engine(template_dir=args.get("template_dir"))
@@ -296,18 +304,13 @@ class AttuneHelpHandlers:
         the whole session is wiped.
         """
         user_id = args.get("user_id", "mcp-session")
-        if not isinstance(user_id, str) or not user_id:
-            return {
-                "success": False,
-                "error": "user_id must be a non-empty string",
-            }
+        user_id, err = _require_str({"user_id": user_id}, "user_id")
+        if err:
+            return err
 
-        topic = args.get("topic")
-        if topic is not None and (not isinstance(topic, str) or not topic):
-            return {
-                "success": False,
-                "error": "topic must be a non-empty string when provided",
-            }
+        topic, err = _require_str(args, "topic", optional=True)
+        if err:
+            return err
 
         try:
             engine = self._engine(
@@ -335,12 +338,9 @@ class AttuneHelpHandlers:
 
     async def lookup_simpler(self, args: dict[str, Any]) -> dict[str, Any]:
         """Step a topic one depth level down and render it."""
-        topic = args.get("topic")
-        if not topic or not isinstance(topic, str):
-            return {
-                "success": False,
-                "error": "topic is required and must be a string",
-            }
+        topic, err = _require_str(args, "topic")
+        if err:
+            return err
 
         renderer = args.get("renderer", "plain")
         if renderer not in _VALID_RENDERERS:
@@ -372,9 +372,9 @@ class AttuneHelpHandlers:
                 "error": f"Topic not found: {topic}",
             }
 
-        # simpler() wrote the new depth through storage, so we
-        # can read it back without another lookup call.
-        session = LocalFileStorage().get_session(args.get("user_id", "mcp-session"))
+        # simpler() wrote the new depth through the engine's
+        # own storage, so read it back from the same instance.
+        session = engine._storage.get_session(engine._user_id)
         depth = (session.get("topics") or {}).get(topic, 0)
         return {
             "success": True,
@@ -405,7 +405,7 @@ class AttuneHelpHandlers:
             }
 
         try:
-            topics = engine.list_topics(type=type_filter, limit=limit)
+            topics = engine.list_topics(type_filter=type_filter, limit=limit)
         except (OSError, ValueError) as e:
             return {"success": False, "error": f"list_topics failed: {e}"}
 
@@ -418,12 +418,9 @@ class AttuneHelpHandlers:
 
     async def search_topics(self, args: dict[str, Any]) -> dict[str, Any]:
         """Fuzzy-search topic slugs."""
-        query = args.get("query")
-        if not query or not isinstance(query, str):
-            return {
-                "success": False,
-                "error": "query is required and must be a non-empty string",
-            }
+        query, err = _require_str(args, "query")
+        if err:
+            return err
 
         limit = args.get("limit", 10)
         if not isinstance(limit, int) or limit < 1:
@@ -451,12 +448,9 @@ class AttuneHelpHandlers:
 
     async def suggest_topics(self, args: dict[str, Any]) -> dict[str, Any]:
         """Return ranked slug suggestions for a (possibly misspelled) topic."""
-        topic = args.get("topic")
-        if not topic or not isinstance(topic, str):
-            return {
-                "success": False,
-                "error": "topic is required and must be a non-empty string",
-            }
+        topic, err = _require_str(args, "topic")
+        if err:
+            return err
 
         limit = args.get("limit", 5)
         if not isinstance(limit, int) or limit < 1:
@@ -492,11 +486,9 @@ class AttuneHelpHandlers:
         the current depth.
         """
         user_id = args.get("user_id", "mcp-session")
-        if not isinstance(user_id, str) or not user_id:
-            return {
-                "success": False,
-                "error": "user_id must be a non-empty string",
-            }
+        user_id, err = _require_str({"user_id": user_id}, "user_id")
+        if err:
+            return err
 
         storage = LocalFileStorage()
         try:

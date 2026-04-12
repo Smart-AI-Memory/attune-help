@@ -693,6 +693,108 @@ class TestSuggestTopicsMCP:
         assert "topic is required" in r["error"]
 
 
+# -- Handler error paths (#8) ----------------------------------------
+
+
+class TestHandlerErrorPaths:
+    """Error-path coverage for MCP handlers."""
+
+    def test_lookup_topic_bad_template_dir(self) -> None:
+        """Invalid template_dir should return a clean error,
+        not crash the server."""
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "security-audit", "template_dir": "/etc/passwd"},
+            )
+        )
+        assert not r["success"]
+
+    def test_lookup_warn_bad_template_dir(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_warn",
+                {"file_path": "app.py", "template_dir": "/etc/passwd"},
+            )
+        )
+        assert not r["success"]
+
+    def test_lookup_preamble_bad_template_dir(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_preamble",
+                {"feature_name": "security", "template_dir": "/etc/passwd"},
+            )
+        )
+        assert not r["success"]
+
+    def test_lookup_simpler_bad_template_dir(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_simpler",
+                {"topic": "security-audit", "template_dir": "/etc/passwd"},
+            )
+        )
+        assert not r["success"]
+
+    def test_lookup_list_topics_bad_type(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_list_topics",
+                {"type": 123},
+            )
+        )
+        assert not r["success"]
+        assert "type" in r["error"]
+
+    def test_search_topics_bad_limit(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_search",
+                {"query": "security", "limit": -1},
+            )
+        )
+        assert not r["success"]
+        assert "limit" in r["error"]
+
+    def test_suggest_topics_bad_limit(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_suggest",
+                {"topic": "security", "limit": 0},
+            )
+        )
+        assert not r["success"]
+        assert "limit" in r["error"]
+
+    def test_lookup_reset_empty_topic_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_reset",
+                {"topic": ""},
+            )
+        )
+        assert not r["success"]
+
+    def test_lookup_status_empty_user_id(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_status",
+                {"user_id": ""},
+            )
+        )
+        assert not r["success"]
+
+
 # -- Dispatch safety -------------------------------------------------
 
 

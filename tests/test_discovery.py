@@ -26,8 +26,8 @@ def test_build_index_finds_known_types() -> None:
 
 def test_list_topics_type_filter() -> None:
     invalidate_index_cache()
-    concepts = list_topics(BUNDLED, type="concepts")
-    tasks = list_topics(BUNDLED, type="tasks")
+    concepts = list_topics(BUNDLED, type_filter="concepts")
+    tasks = list_topics(BUNDLED, type_filter="tasks")
     assert len(concepts) > 0
     assert len(tasks) > 0
     assert set(concepts).isdisjoint({"nonexistent-slug"})
@@ -61,7 +61,7 @@ def test_suggest_returns_slugs_only() -> None:
 
 def test_engine_list_topics() -> None:
     eng = HelpEngine()
-    result = eng.list_topics(type="concepts", limit=5)
+    result = eng.list_topics(type_filter="concepts", limit=5)
     assert len(result) == 5
 
 

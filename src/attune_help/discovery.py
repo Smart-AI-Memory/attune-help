@@ -79,23 +79,24 @@ def build_index(generated_dir: Path) -> dict[str, list[str]]:
 
 def list_topics(
     generated_dir: Path,
-    type: str | None = None,
+    type_filter: str | None = None,
     limit: int | None = None,
 ) -> list[str]:
     """Enumerate topic slugs.
 
     Args:
         generated_dir: Template directory.
-        type: Optional type filter (e.g. ``"concepts"``).
-            ``None`` returns all types flattened.
+        type_filter: Optional type filter (e.g.
+            ``"concepts"``). ``None`` returns all types
+            flattened.
         limit: Optional cap on returned items.
 
     Returns:
         Sorted list of slugs.
     """
     index = build_index(generated_dir)
-    if type is not None:
-        result = list(index.get(type, []))
+    if type_filter is not None:
+        result = list(index.get(type_filter, []))
     else:
         result = sorted({s for slugs in index.values() for s in slugs})
     if limit is not None:

@@ -114,7 +114,7 @@ levels that `/coach init` generates for each feature.
 
 ```python
 engine.list_topics()                  # all slugs
-engine.list_topics(type="concepts")   # filter by type
+engine.list_topics(type_filter="concepts")  # filter by type
 engine.search("security")             # [(slug, score), ...]
 engine.suggest("secrity-audit")       # ranked slugs
 ```
