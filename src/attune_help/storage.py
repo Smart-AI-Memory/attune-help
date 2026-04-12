@@ -48,7 +48,49 @@ class SessionStorage(Protocol):
 
 def _defaults() -> dict[str, Any]:
     """Fresh session defaults."""
-    return {"last_topic": None, "depth_level": 0}
+    return {
+        "last_topic": None,
+        "depth_level": 0,
+        "topics": {},
+        "order": [],
+    }
+
+
+def _migrate_legacy(data: dict[str, Any]) -> dict[str, Any]:
+    """Translate an old session dict into the new schema.
+
+    Old shape: ``{"last_topic": str, "depth_level": int}``.
+    New shape adds ``topics`` (slug → depth) and ``order``
+    (LRU list). Legacy sessions are mapped so the user's
+    single-slot progress becomes the first entry in the
+    per-topic dict.
+
+    Args:
+        data: Raw dict read from disk.
+
+    Returns:
+        Normalized dict with the new fields populated.
+    """
+    topics = data.get("topics")
+    order = data.get("order")
+    last_topic = data.get("last_topic")
+    depth_level = data.get("depth_level", 0)
+
+    if not isinstance(topics, dict):
+        topics = {}
+    if not isinstance(order, list):
+        order = []
+
+    if not topics and last_topic:
+        topics = {last_topic: depth_level}
+        order = [last_topic]
+
+    return {
+        "last_topic": last_topic,
+        "depth_level": depth_level,
+        "topics": topics,
+        "order": order,
+    }
 
 
 class LocalFileStorage:
@@ -120,6 +162,10 @@ class LocalFileStorage:
     def get_session(self, user_id: str) -> dict[str, Any]:
         """Load session state from a JSON file.
 
+        Legacy sessions (pre-0.4.0) are migrated on read
+        so existing `.attune-help/sessions/` files work
+        transparently after upgrade.
+
         Args:
             user_id: User identifier (used as filename).
 
@@ -140,10 +186,7 @@ class LocalFileStorage:
             ts = data.get("timestamp", 0)
             if time.time() - ts > self._ttl:
                 return defaults
-            return {
-                "last_topic": data.get("last_topic"),
-                "depth_level": data.get("depth_level", 0),
-            }
+            return _migrate_legacy(data)
         except (json.JSONDecodeError, OSError, KeyError):
             return defaults
 
@@ -162,15 +205,15 @@ class LocalFileStorage:
         try:
             self._dir.mkdir(parents=True, exist_ok=True)
             tmp = path.with_suffix(".json.tmp")
+            payload = {
+                "last_topic": state.get("last_topic"),
+                "depth_level": state.get("depth_level", 0),
+                "topics": state.get("topics", {}),
+                "order": state.get("order", []),
+                "timestamp": time.time(),
+            }
             tmp.write_text(
-                json.dumps(
-                    {
-                        "last_topic": state["last_topic"],
-                        "depth_level": state["depth_level"],
-                        "timestamp": time.time(),
-                    }
-                )
-                + "\n",
+                json.dumps(payload) + "\n",
                 encoding="utf-8",
             )
             tmp.replace(path)  # replace() is cross-platform

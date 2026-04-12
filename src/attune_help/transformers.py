@@ -1,18 +1,50 @@
 """Audience transformers for the help system.
 
-Three render functions that convert a PopulatedTemplate into
-output format for each channel:
+Render functions that convert a PopulatedTemplate into
+output for each channel:
   - Claude Code: concise Markdown for inline conversation
-  - Marketplace: YAML frontmatter + full Markdown for static site
+  - Marketplace: YAML frontmatter + full Markdown
   - CLI: Rich panels and color for terminal display
+  - JSON: deterministic structured output for apps
 """
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from attune_help.templates import PopulatedTemplate
+
+
+def render_json(template: PopulatedTemplate) -> str:
+    """Render a template as deterministic JSON.
+
+    Emits a structured representation suitable for apps,
+    web dashboards, and snapshot tests. Keys are sorted so
+    output is stable across runs.
+
+    Args:
+        template: Populated template to render.
+
+    Returns:
+        JSON string.
+    """
+    payload = {
+        "template_id": template.template_id,
+        "type": template.type,
+        "subtype": template.subtype,
+        "name": template.name,
+        "title": template.title,
+        "body": template.body,
+        "sections": template.sections,
+        "tags": list(template.tags),
+        "related": list(template.related),
+        "confidence": template.confidence,
+        "source": template.source,
+        "metadata": template.metadata,
+    }
+    return json.dumps(payload, sort_keys=True, ensure_ascii=False)
 
 
 def render_claude_code(template: PopulatedTemplate) -> str:
@@ -58,8 +90,18 @@ def render_claude_code(template: PopulatedTemplate) -> str:
         if "Why" in template.sections:
             lines.append(f"\n*{template.sections['Why']}*")
 
-    elif template.type == "reference":
-        return template.body
+    elif template.type in ("reference", "concept", "task"):
+        # Concepts, tasks, and references are already
+        # conversation-ready — emit the full body with the
+        # title block and optional tool hint.
+        if template.body:
+            lines.append(template.body)
+
+    else:
+        # Unknown type — fall back to body so nothing is
+        # silently dropped.
+        if template.body:
+            lines.append(template.body)
 
     if template.related:
         tool_refs = [r for r in template.related if r["type"] == "Tool Reference"]

@@ -23,6 +23,48 @@ logger = logging.getLogger(__name__)
 
 _DEPTH_VERBOSITY = {0: "compact", 1: "normal", 2: "detailed"}
 _LEVEL_LABELS = {0: "concept", 1: "procedural", 2: "reference"}
+_MAX_TOPICS = 32
+
+
+def _record_topic(
+    session: dict[str, Any],
+    topic: str,
+    depth: int,
+) -> dict[str, Any]:
+    """Update a session dict with a topic's new depth.
+
+    Maintains LRU order (most-recent last) and evicts the
+    oldest topic once the cap is exceeded. Also mirrors the
+    latest entry onto the legacy ``last_topic`` /
+    ``depth_level`` fields so old readers keep working.
+
+    Args:
+        session: Existing session dict.
+        topic: Topic slug being recorded.
+        depth: Depth level to store (0–2).
+
+    Returns:
+        New session dict suitable for ``set_session``.
+    """
+    topics = dict(session.get("topics") or {})
+    order = list(session.get("order") or [])
+
+    if topic in order:
+        order.remove(topic)
+    order.append(topic)
+    topics[topic] = depth
+
+    while len(order) > _MAX_TOPICS:
+        evicted = order.pop(0)
+        topics.pop(evicted, None)
+
+    return {
+        "last_topic": topic,
+        "depth_level": depth,
+        "topics": topics,
+        "order": order,
+    }
+
 
 _TOPIC_PATTERNS: dict[int, list[str]] = {
     0: ["con-tool-{topic}", "con-{topic}"],
@@ -128,10 +170,13 @@ def populate_progressive(
 
     # Compute depth from session state (but don't persist yet)
     session = storage.get_session(user_id)
-    if topic == session.get("last_topic"):
-        depth = min(session.get("depth_level", 0) + 1, 2)
+    topics_map = session.get("topics") or {}
+    if starting_level is not None:
+        depth = starting_level
+    elif topic in topics_map:
+        depth = min(topics_map[topic] + 1, 2)
     else:
-        depth = starting_level if starting_level is not None else 0
+        depth = 0
 
     # Try type-driven resolution
     resolved_id = _resolve_topic_at_level(topic, depth, gen_dir)
@@ -146,7 +191,7 @@ def populate_progressive(
             # Only persist after successful resolution
             storage.set_session(
                 user_id,
-                {"last_topic": topic, "depth_level": depth},
+                _record_topic(session, topic, depth),
             )
             result.metadata["depth_level"] = depth
             result.metadata["level_label"] = _LEVEL_LABELS.get(depth, "")
@@ -171,7 +216,7 @@ def populate_progressive(
         # Persist only on successful fallback too
         storage.set_session(
             user_id,
-            {"last_topic": topic, "depth_level": depth},
+            _record_topic(session, topic, depth),
         )
         result.metadata["depth_level"] = depth
         result.metadata["level_label"] = _LEVEL_LABELS.get(depth, "")

@@ -24,6 +24,7 @@ from attune_help.templates import (
 from attune_help.transformers import (
     render_claude_code,
     render_cli,
+    render_json,
     render_marketplace,
 )
 
@@ -71,12 +72,15 @@ _RENDERERS = {
     "claude_code": render_claude_code,
     "cli": render_cli,
     "marketplace": render_marketplace,
+    "json": render_json,
 }
+
+_VALID_RENDERERS = frozenset({*_RENDERERS.keys(), "auto"})
 
 _DEPTH_PROMPTS = {
     0: '\n\n*(concept view — say "tell me more" for step-by-step)*',
     1: '\n\n*(task view — say "tell me more" for full reference)*',
-    2: "",
+    2: '\n\n*(reference — deepest level; say "simpler" to step back)*',
 }
 
 
@@ -117,8 +121,25 @@ class HelpEngine:
         self._override_dir = Path(template_dir) if template_dir else None
         self._bundled_dir = _BUNDLED_DIR
         self._storage = storage or LocalFileStorage()
-        self._renderer_name = renderer
         self._user_id = user_id
+        self.set_renderer(renderer)
+
+    def set_renderer(self, name: str) -> None:
+        """Change the active renderer at runtime.
+
+        Args:
+            name: One of ``"plain"``, ``"claude_code"``,
+                ``"cli"``, ``"marketplace"``, ``"json"``,
+                or ``"auto"``.
+
+        Raises:
+            ValueError: If ``name`` is not a known
+                renderer.
+        """
+        if name not in _VALID_RENDERERS:
+            valid = ", ".join(sorted(_VALID_RENDERERS))
+            raise ValueError(f"Unknown renderer {name!r}. Valid: {valid}")
+        self._renderer_name = name
 
     @property
     def generated_dir(self) -> Path:
@@ -136,11 +157,91 @@ class HelpEngine:
                 return self._override_dir
         return self._bundled_dir
 
+    def simpler(
+        self,
+        topic: str,
+        context: TemplateContext | None = None,
+        audience: AudienceProfile | None = None,
+    ) -> str | None:
+        """Step a topic one depth level down and render it.
+
+        Decrements the stored depth for ``topic`` (clamped
+        at 0) and returns the rendered template at the new
+        depth. At level 0 this re-renders the concept.
+
+        Args:
+            topic: Topic slug to step down.
+            context: Optional runtime context.
+            audience: Optional audience override.
+
+        Returns:
+            Rendered string, or None if the topic can't be
+            resolved.
+        """
+        session = self._storage.get_session(self._user_id)
+        current = (session.get("topics") or {}).get(topic, 0)
+        new_depth = max(current - 1, 0)
+        result = populate_progressive(
+            topic,
+            storage=self._storage,
+            user_id=self._user_id,
+            context=context,
+            audience=audience,
+            generated_dir=self.generated_dir,
+            starting_level=new_depth,
+        )
+        if result is None:
+            return None
+        rendered = self.render(result)
+        depth = result.metadata.get("depth_level", new_depth)
+        return rendered + _depth_prompt(depth)
+
+    def reset(self, topic: str | None = None) -> None:
+        """Clear session depth history.
+
+        Args:
+            topic: If given, clear only this topic's depth.
+                If None, clear the entire session.
+        """
+        session = self._storage.get_session(self._user_id)
+        if topic is None:
+            self._storage.set_session(
+                self._user_id,
+                {
+                    "last_topic": None,
+                    "depth_level": 0,
+                    "topics": {},
+                    "order": [],
+                },
+            )
+            return
+        topics = dict(session.get("topics") or {})
+        order = list(session.get("order") or [])
+        topics.pop(topic, None)
+        if topic in order:
+            order.remove(topic)
+        last_topic = session.get("last_topic")
+        depth_level = session.get("depth_level", 0)
+        if last_topic == topic:
+            last_topic = order[-1] if order else None
+            depth_level = topics.get(last_topic, 0) if last_topic else 0
+        self._storage.set_session(
+            self._user_id,
+            {
+                "last_topic": last_topic,
+                "depth_level": depth_level,
+                "topics": topics,
+                "order": order,
+            },
+        )
+
     def lookup(
         self,
         topic: str,
         context: TemplateContext | None = None,
         audience: AudienceProfile | None = None,
+        *,
+        suggest_on_miss: bool = False,
     ) -> str | None:
         """Look up a topic with progressive depth.
 
@@ -152,9 +253,14 @@ class HelpEngine:
             topic: Topic slug or template ID.
             context: Optional runtime context.
             audience: Optional audience override.
+            suggest_on_miss: If True and the topic is not
+                found, return a "did you mean" string
+                instead of None.
 
         Returns:
-            Rendered string, or None if not found.
+            Rendered string, or None if not found (or a
+            suggestion string when ``suggest_on_miss`` is
+            True).
         """
         result = populate_progressive(
             topic,
@@ -165,10 +271,74 @@ class HelpEngine:
             generated_dir=self.generated_dir,
         )
         if result is None:
+            if suggest_on_miss:
+                hits = self.suggest(topic)
+                if hits:
+                    joined = ", ".join(hits)
+                    return f"No help for {topic!r}. Did you mean: {joined}?"
+                return f"No help for {topic!r}."
             return None
         rendered = self.render(result)
         depth = result.metadata.get("depth_level", 0)
         return rendered + _depth_prompt(depth)
+
+    def list_topics(
+        self,
+        type: str | None = None,
+        limit: int | None = None,
+    ) -> list[str]:
+        """Enumerate available topic slugs.
+
+        Args:
+            type: Optional type filter (``"concepts"``,
+                ``"tasks"``, ``"references"``, etc.).
+            limit: Optional cap on results.
+
+        Returns:
+            Sorted list of slugs.
+        """
+        from attune_help.discovery import list_topics as _list
+
+        return _list(self.generated_dir, type=type, limit=limit)
+
+    def search(
+        self,
+        query: str,
+        limit: int = 10,
+    ) -> list[tuple[str, float]]:
+        """Fuzzy-search topic slugs.
+
+        Args:
+            query: Search text.
+            limit: Maximum results.
+
+        Returns:
+            List of ``(slug, score)`` tuples, best first.
+        """
+        from attune_help.discovery import search as _search
+
+        return _search(self.generated_dir, query, limit=limit)
+
+    def suggest(
+        self,
+        topic: str,
+        limit: int = 5,
+    ) -> list[str]:
+        """Return ranked slug suggestions for a topic.
+
+        Useful after a lookup miss to offer "did you mean"
+        alternatives.
+
+        Args:
+            topic: The (likely misspelled) topic.
+            limit: Maximum suggestions.
+
+        Returns:
+            List of slugs.
+        """
+        from attune_help.discovery import suggest as _suggest
+
+        return _suggest(self.generated_dir, topic, limit=limit)
 
     def preamble(self, feature_name: str) -> str | None:
         """Get the one-liner preamble for a feature.
@@ -196,7 +366,10 @@ class HelpEngine:
 
         Designed to display instantly when a user invokes a
         skill by name — tells them what's about to happen
-        while the skill starts working.
+        while the skill starts working. Override directory
+        wins; bundled summaries act as a fallback so users
+        who ship an override without summaries.json still
+        see the bundled entries.
 
         Args:
             skill_name: Skill slug (e.g. "security-audit").
@@ -205,7 +378,12 @@ class HelpEngine:
             One-line summary string, or None if not found.
         """
         summaries = _load_summaries(self.generated_dir)
-        return summaries.get(skill_name)
+        result = summaries.get(skill_name)
+        if result is not None:
+            return result
+        if self.generated_dir != self._bundled_dir:
+            return _load_summaries(self._bundled_dir).get(skill_name)
+        return None
 
     def get(
         self,
@@ -276,16 +454,10 @@ class HelpEngine:
         Returns:
             Rendered string.
         """
-        renderer_fn = _RENDERERS.get(self._renderer_name)
-        if renderer_fn is None:
-            if self._renderer_name == "auto":
-                renderer_fn = self._auto_detect_renderer()
-            else:
-                logger.warning(
-                    "Unknown renderer '%s', falling back to plain",
-                    self._renderer_name,
-                )
-                renderer_fn = _RENDERERS["plain"]
+        if self._renderer_name == "auto":
+            renderer_fn = self._auto_detect_renderer()
+        else:
+            renderer_fn = _RENDERERS[self._renderer_name]
         return renderer_fn(template)
 
     def precursor_warnings(
@@ -322,6 +494,14 @@ class HelpEngine:
             ".env": ["config", "secrets"],
             ".cfg": ["config"],
             ".ini": ["config"],
+            ".js": ["javascript", "testing", "error-handling"],
+            ".jsx": ["javascript", "testing", "error-handling"],
+            ".ts": ["typescript", "javascript", "testing", "error-handling"],
+            ".tsx": ["typescript", "javascript", "testing", "error-handling"],
+            ".rs": ["rust", "testing", "error-handling"],
+            ".go": ["go", "testing", "error-handling"],
+            ".rb": ["ruby", "testing", "error-handling"],
+            ".java": ["java", "testing", "error-handling"],
         }
         tags.extend(ext_map.get(ext, []))
 
@@ -395,17 +575,32 @@ class HelpEngine:
     def _auto_detect_renderer() -> Any:
         """Detect the best renderer for the current environment.
 
+        Priority:
+          1. ``$CLAUDE_CODE`` → ``render_claude_code``
+          2. Interactive TTY with ``rich`` installed →
+             ``render_cli``
+          3. Otherwise → ``plain`` (safe for pipes,
+             logs, non-interactive runs)
+
         Returns:
             Renderer function.
         """
         import os
+        import sys
 
         if os.environ.get("CLAUDE_CODE"):
             return render_claude_code
-        try:
-            import rich  # noqa: F401
 
-            return render_cli
-        except ImportError:
-            pass
+        try:
+            is_tty = bool(sys.stdout.isatty())
+        except (AttributeError, ValueError):
+            is_tty = False
+
+        if is_tty:
+            try:
+                import rich  # noqa: F401
+
+                return render_cli
+            except ImportError:
+                pass
         return _RENDERERS["plain"]

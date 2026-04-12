@@ -20,12 +20,17 @@ def get_preamble(
     """Get the one-liner preamble for a feature.
 
     Reads the task template and returns the first
-    non-empty paragraph after the h1 heading.
+    non-empty paragraph after the h1 heading. Tries
+    multiple on-disk layouts so the function works for
+    both nested (`<feature>/task.md`) and flat
+    (`tasks/use-<feature>.md`) template trees.
 
     Args:
-        feature_name: Feature slug (e.g. "security").
-        template_dir: Path to templates directory
-            (containing feature subdirectories).
+        feature_name: Feature slug (e.g. "security-audit").
+        template_dir: Path to templates directory. May
+            be either the parent of nested feature dirs
+            (demo layout) or the parent of `tasks/`
+            (flat layout used by bundled templates).
 
     Returns:
         Preamble string, or None if not available.
@@ -38,18 +43,28 @@ def get_preamble(
         or "\x00" in feature_name
     ):
         return None
-    task_path = Path(template_dir) / feature_name / "task.md"
 
-    if not task_path.exists():
-        return None
+    base = Path(template_dir)
+    candidates = [
+        base / feature_name / "task.md",
+        base / "tasks" / f"use-{feature_name}.md",
+        base / "tasks" / f"{feature_name}.md",
+        base / "tasks" / f"task-{feature_name}.md",
+    ]
 
-    try:
-        text = task_path.read_text(encoding="utf-8")
-    except OSError as e:
-        logger.debug("Cannot read %s: %s", task_path, e)
-        return None
+    for path in candidates:
+        if not path.exists():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as e:
+            logger.debug("Cannot read %s: %s", path, e)
+            continue
+        preamble = _extract_preamble(text)
+        if preamble:
+            return preamble
 
-    return _extract_preamble(text)
+    return None
 
 
 def _extract_preamble(text: str) -> str | None:

@@ -48,9 +48,18 @@ engine = HelpEngine(renderer="cli")
 # Claude Code inline format
 engine = HelpEngine(renderer="claude_code")
 
-# Auto-detect environment
+# Structured JSON (for apps, web, tests)
+engine = HelpEngine(renderer="json")
+
+# Auto-detect environment (CLAUDE_CODE → claude_code,
+# interactive TTY + rich → cli, otherwise → plain)
 engine = HelpEngine(renderer="auto")
+
+# Switch renderer at runtime
+engine.set_renderer("cli")
 ```
+
+Passing an unknown renderer name raises `ValueError`.
 
 ## Template Directory
 
@@ -101,6 +110,44 @@ The `security-audit/` demo contains `concept.md`,
 `task.md`, and `reference.md` — the three depth
 levels that `/coach init` generates for each feature.
 
+## Discovery
+
+```python
+engine.list_topics()                  # all slugs
+engine.list_topics(type="concepts")   # filter by type
+engine.search("security")             # [(slug, score), ...]
+engine.suggest("secrity-audit")       # ranked slugs
+```
+
+Miss handling:
+
+```python
+# Returns None by default
+engine.lookup("typoed-slug")
+
+# Returns "No help for 'typoed-slug'. Did you mean: ..."
+engine.lookup("typoed-slug", suggest_on_miss=True)
+```
+
+## Progressive Depth Controls
+
+```python
+engine.lookup("security-audit")    # concept
+engine.lookup("security-audit")    # task
+engine.lookup("security-audit")    # reference (depth 2)
+
+engine.simpler("security-audit")   # step back to task
+engine.simpler("security-audit")   # step back to concept
+
+engine.reset("security-audit")     # clear one topic
+engine.reset()                     # clear all topics
+```
+
+Topics are tracked independently — interleaving
+`lookup("a")` / `lookup("b")` / `lookup("a")` does **not**
+reset `a`'s depth. An LRU cap of 32 topics keeps session
+state bounded.
+
 ## API
 
 ### `HelpEngine`
@@ -116,13 +163,22 @@ HelpEngine(
 
 **Methods:**
 
-- `lookup(topic)` — Progressive depth lookup
+- `lookup(topic, *, suggest_on_miss=False)` — Progressive
+  depth lookup with optional "did you mean" on miss
+- `simpler(topic)` — Step back one depth level
+- `reset(topic=None)` — Clear depth history for one topic
+  or all
+- `list_topics(type=None, limit=None)` — Enumerate slugs
+- `search(query, limit=10)` — Fuzzy-search slugs
+- `suggest(topic, limit=5)` — Ranked slug suggestions
 - `get(template_id)` — Direct template access
 - `lookup_raw(topic)` — Returns `PopulatedTemplate`
   dataclass
-- `get_summary(skill)` — One-line skill summary
-- `precursor_warnings(file_path)` — File-aware
-  warnings
+- `get_summary(skill)` — One-line skill summary (falls
+  back to bundled when an override lacks it)
+- `precursor_warnings(file_path)` — File-aware warnings
+  (supports Python, JS/TS, Rust, Go, Ruby, Java, …)
+- `set_renderer(name)` — Change renderer at runtime
 
 ### `SessionStorage` Protocol
 
