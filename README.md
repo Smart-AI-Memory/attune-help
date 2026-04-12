@@ -148,6 +148,37 @@ Topics are tracked independently — interleaving
 reset `a`'s depth. An LRU cap of 32 topics keeps session
 state bounded.
 
+## MCP Server
+
+Install with the plugin extra and use as an MCP server:
+
+```bash
+pip install attune-help[plugin]
+attune-help-mcp   # stdio transport
+```
+
+Exposed tools (all prefixed `lookup_` for namespace
+hygiene against other plugins):
+
+| Tool | Purpose |
+|------|---------|
+| `lookup_topic` | Progressive depth lookup |
+| `lookup_simpler` | Step a topic one level back |
+| `lookup_reset` | Clear a single topic or full session |
+| `lookup_status` | Read session state (topics + LRU order) |
+| `lookup_list` | Category-grouped topic enumeration |
+| `lookup_list_topics` | Flat slug enumeration (optionally by type) |
+| `lookup_search` | Fuzzy slug search with scores |
+| `lookup_suggest` | "Did you mean" slug suggestions |
+| `lookup_warn` | File-context warnings for a path |
+| `lookup_preamble` | "Use X when..." one-liner for a feature |
+
+All tools that render help content accept the same
+renderer set as the Python API: `plain`, `claude_code`,
+`cli`, `marketplace`, `json` (the `auto` sentinel is
+excluded because auto-detection is meaningless over a
+protocol boundary).
+
 ## API
 
 ### `HelpEngine`

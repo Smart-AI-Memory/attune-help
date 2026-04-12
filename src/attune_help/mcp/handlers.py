@@ -13,17 +13,20 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from attune_help.engine import VALID_RENDERERS as _ENGINE_RENDERERS
 from attune_help.engine import HelpEngine
 from attune_help.mcp.path_validation import validate_file_path
 from attune_help.storage import LocalFileStorage
 
 logger = logging.getLogger(__name__)
 
-# Must match the `renderer` enum in tool_schemas.get_tools().
-# Kept as a module-level frozenset so the defensive check in
-# lookup_topic() is O(1) and trivially greppable. If a new renderer
-# is added, update both places.
-_VALID_RENDERERS = frozenset({"plain", "claude_code", "cli", "marketplace"})
+# Derived from the engine's source of truth so adding a
+# new renderer to HelpEngine automatically propagates here
+# and to the JSON schema enum in tool_schemas.py. The
+# ``auto`` sentinel is excluded because auto-detection has
+# no meaning across an MCP protocol boundary — the server
+# cannot see the client's TTY.
+_VALID_RENDERERS = frozenset(_ENGINE_RENDERERS - {"auto"})
 
 
 class AttuneHelpHandlers:
@@ -286,7 +289,12 @@ class AttuneHelpHandlers:
         }
 
     async def lookup_reset(self, args: dict[str, Any]) -> dict[str, Any]:
-        """Clear progression state so the next lookup starts over."""
+        """Clear progression state so the next lookup starts over.
+
+        With ``topic`` set, only that topic's depth is cleared;
+        the rest of the session is preserved. Without ``topic``,
+        the whole session is wiped.
+        """
         user_id = args.get("user_id", "mcp-session")
         if not isinstance(user_id, str) or not user_id:
             return {
@@ -294,19 +302,184 @@ class AttuneHelpHandlers:
                 "error": "user_id must be a non-empty string",
             }
 
-        storage = LocalFileStorage()
+        topic = args.get("topic")
+        if topic is not None and (not isinstance(topic, str) or not topic):
+            return {
+                "success": False,
+                "error": "topic must be a non-empty string when provided",
+            }
+
         try:
-            storage.set_session(
-                user_id,
-                {"last_topic": None, "depth_level": 0},
+            engine = self._engine(
+                template_dir=args.get("template_dir"),
+                user_id=user_id,
             )
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
+        try:
+            engine.reset(topic)
         except (OSError, ValueError) as e:
             return {"success": False, "error": f"reset failed: {e}"}
 
+        if topic is None:
+            message = "Session reset — next lookup starts at concept."
+        else:
+            message = f"Topic {topic!r} reset — next lookup on that topic " "starts at concept."
         return {
             "success": True,
             "user_id": user_id,
-            "message": "Session reset — next lookup starts at concept.",
+            "topic": topic,
+            "message": message,
+        }
+
+    async def lookup_simpler(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Step a topic one depth level down and render it."""
+        topic = args.get("topic")
+        if not topic or not isinstance(topic, str):
+            return {
+                "success": False,
+                "error": "topic is required and must be a string",
+            }
+
+        renderer = args.get("renderer", "plain")
+        if renderer not in _VALID_RENDERERS:
+            return {
+                "success": False,
+                "error": (
+                    f"renderer must be one of " f"{sorted(_VALID_RENDERERS)}, got {renderer!r}"
+                ),
+            }
+
+        try:
+            engine = self._engine(
+                template_dir=args.get("template_dir"),
+                user_id=args.get("user_id", "mcp-session"),
+                renderer=renderer,
+            )
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
+        try:
+            rendered = engine.simpler(topic)
+        except (OSError, ValueError) as e:
+            logger.warning("simpler failed for %s: %s", topic, e)
+            return {"success": False, "error": f"simpler failed: {e}"}
+
+        if rendered is None:
+            return {
+                "success": False,
+                "error": f"Topic not found: {topic}",
+            }
+
+        # simpler() wrote the new depth through storage, so we
+        # can read it back without another lookup call.
+        session = LocalFileStorage().get_session(args.get("user_id", "mcp-session"))
+        depth = (session.get("topics") or {}).get(topic, 0)
+        return {
+            "success": True,
+            "topic": topic,
+            "depth_level": depth,
+            "rendered": rendered,
+        }
+
+    async def list_topics(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Enumerate topic slugs, optionally filtered by type."""
+        try:
+            engine = self._engine(template_dir=args.get("template_dir"))
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
+        type_filter = args.get("type")
+        if type_filter is not None and not isinstance(type_filter, str):
+            return {
+                "success": False,
+                "error": "type must be a string when provided",
+            }
+
+        limit = args.get("limit")
+        if limit is not None and (not isinstance(limit, int) or limit < 1):
+            return {
+                "success": False,
+                "error": "limit must be a positive integer when provided",
+            }
+
+        try:
+            topics = engine.list_topics(type=type_filter, limit=limit)
+        except (OSError, ValueError) as e:
+            return {"success": False, "error": f"list_topics failed: {e}"}
+
+        return {
+            "success": True,
+            "type_filter": type_filter,
+            "count": len(topics),
+            "topics": topics,
+        }
+
+    async def search_topics(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Fuzzy-search topic slugs."""
+        query = args.get("query")
+        if not query or not isinstance(query, str):
+            return {
+                "success": False,
+                "error": "query is required and must be a non-empty string",
+            }
+
+        limit = args.get("limit", 10)
+        if not isinstance(limit, int) or limit < 1:
+            return {
+                "success": False,
+                "error": "limit must be a positive integer",
+            }
+
+        try:
+            engine = self._engine(template_dir=args.get("template_dir"))
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
+        try:
+            hits = engine.search(query, limit=limit)
+        except (OSError, ValueError) as e:
+            return {"success": False, "error": f"search failed: {e}"}
+
+        return {
+            "success": True,
+            "query": query,
+            "count": len(hits),
+            "hits": [{"slug": slug, "score": score} for slug, score in hits],
+        }
+
+    async def suggest_topics(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Return ranked slug suggestions for a (possibly misspelled) topic."""
+        topic = args.get("topic")
+        if not topic or not isinstance(topic, str):
+            return {
+                "success": False,
+                "error": "topic is required and must be a non-empty string",
+            }
+
+        limit = args.get("limit", 5)
+        if not isinstance(limit, int) or limit < 1:
+            return {
+                "success": False,
+                "error": "limit must be a positive integer",
+            }
+
+        try:
+            engine = self._engine(template_dir=args.get("template_dir"))
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+
+        try:
+            suggestions = engine.suggest(topic, limit=limit)
+        except (OSError, ValueError) as e:
+            return {"success": False, "error": f"suggest failed: {e}"}
+
+        return {
+            "success": True,
+            "topic": topic,
+            "count": len(suggestions),
+            "suggestions": suggestions,
         }
 
     async def lookup_status(self, args: dict[str, Any]) -> dict[str, Any]:
@@ -333,10 +506,14 @@ class AttuneHelpHandlers:
 
         depth = session.get("depth_level", 0)
         level_labels = {0: "concept", 1: "procedural", 2: "reference"}
+        topics_map = dict(session.get("topics") or {})
+        order = list(session.get("order") or [])
         return {
             "success": True,
             "user_id": user_id,
             "last_topic": session.get("last_topic"),
             "depth_level": depth,
             "level_label": level_labels.get(depth, "unknown"),
+            "topics": topics_map,
+            "order": order,
         }

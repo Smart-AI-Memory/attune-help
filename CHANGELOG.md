@@ -2,6 +2,58 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.5.0 — 2026-04-11
+
+MCP layer catches up to the 0.4 `HelpEngine` public API.
+Everything added to the Python API in 0.4 is now
+reachable from an MCP client.
+
+### Added
+
+- **`lookup_simpler`** MCP tool — step a topic one depth
+  level back down, mirroring `HelpEngine.simpler()`.
+- **`lookup_list_topics`** MCP tool — flat slug
+  enumeration optionally filtered by type
+  (`concepts`, `tasks`, `references`, …).
+- **`lookup_search`** MCP tool — fuzzy slug search
+  returning ranked `{slug, score}` hits.
+- **`lookup_suggest`** MCP tool — "did you mean" slug
+  suggestions.
+- `lookup_reset` now accepts an optional `topic`
+  parameter to clear a single topic instead of the full
+  session, mirroring `HelpEngine.reset(topic)`.
+- `lookup_status` now returns the full per-topic depth
+  map (`topics`) and LRU order (`order`) alongside the
+  legacy `last_topic` / `depth_level` fields.
+- `"json"` is now an accepted renderer across every MCP
+  tool that renders content — previously only reachable
+  from the Python API.
+- Public `attune_help.engine.VALID_RENDERERS` constant so
+  downstream code can derive allowlists from the same
+  source the engine uses.
+
+### Fixed
+
+- Renderer allowlist drift between `HelpEngine` and the
+  MCP layer. The handler `_VALID_RENDERERS` frozenset
+  and the `tool_schemas` JSON enum now both derive from
+  `engine.VALID_RENDERERS`, so adding a renderer to the
+  engine automatically propagates to MCP.
+- MCP `lookup_reset` previously wrote the legacy
+  (pre-0.4) session schema, bypassing the per-topic
+  history introduced in 0.4. It now delegates to
+  `HelpEngine.reset()`, which writes the current schema.
+- MCP tool count assertion was hardcoded. It now uses
+  the dispatch table as the source of truth so adding
+  tools no longer forces mechanical test updates.
+
+### Changed
+
+- Nothing breaking. All existing MCP tool names and
+  response shapes are preserved. New fields on
+  `lookup_status` are additive; the `topic` parameter on
+  `lookup_reset` is optional.
+
 ## 0.4.0 — 2026-04-11
 
 ### Added

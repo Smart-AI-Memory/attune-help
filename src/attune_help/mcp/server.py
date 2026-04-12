@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 class AttuneHelpMCPServer:
     """MCP server for attune-help.
 
-    Wraps AttuneHelpHandlers and exposes 6 tools through
-    the MCP stdio transport.
+    Wraps AttuneHelpHandlers and exposes the registered
+    tools through the MCP stdio transport.
     """
 
     def __init__(self, workspace_root: str | None = None) -> None:
@@ -63,7 +63,11 @@ class AttuneHelpMCPServer:
             "lookup_warn": self._handlers.lookup_warn,
             "lookup_preamble": self._handlers.lookup_preamble,
             "lookup_reset": self._handlers.lookup_reset,
+            "lookup_simpler": self._handlers.lookup_simpler,
             "lookup_status": self._handlers.lookup_status,
+            "lookup_list_topics": self._handlers.list_topics,
+            "lookup_search": self._handlers.search_topics,
+            "lookup_suggest": self._handlers.suggest_topics,
         }
 
     @property

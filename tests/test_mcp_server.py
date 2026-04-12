@@ -32,9 +32,18 @@ class TestServerConstruction:
         server = AttuneHelpMCPServer(workspace_root=str(tmp_path))
         assert server._workspace_root == str(tmp_path)
 
-    def test_has_six_tools(self) -> None:
+    def test_tool_count_matches_dispatch(self) -> None:
+        """Tool count must match the dispatch table size.
+
+        Use the dispatch table as the source of truth instead
+        of a hardcoded number so adding a new tool doesn't
+        force a mechanical test update. See the error template
+        `mcp-tool-count-tests-are-hardcoded.md` for the
+        history behind this change.
+        """
         server = AttuneHelpMCPServer()
-        assert len(server.tools) == 6
+        assert len(server.tools) == len(server._dispatch)
+        assert len(server.tools) >= 9  # lower bound: current set
 
     def test_all_tools_have_lookup_prefix(self) -> None:
         server = AttuneHelpMCPServer()
@@ -192,7 +201,8 @@ class TestLookupTopic:
     def test_all_schema_renderers_accepted(self) -> None:
         """Every renderer the schema declares must be accepted."""
         server = AttuneHelpMCPServer()
-        for renderer in ("plain", "claude_code", "cli", "marketplace"):
+        schema_enum = server.tools["lookup_topic"]["input_schema"]["properties"]["renderer"]["enum"]
+        for renderer in schema_enum:
             uid = f"test-renderer-{renderer}-{int(time.time() * 1000000)}"
             r = asyncio.run(
                 server.call_tool(
@@ -205,6 +215,50 @@ class TestLookupTopic:
                 )
             )
             assert r["success"], f"renderer={renderer!r} rejected by handler: {r}"
+
+    def test_renderer_allowlist_derives_from_engine(self) -> None:
+        """Schema enum and handler allowlist must track engine.VALID_RENDERERS.
+
+        Drift guard: adding a renderer to HelpEngine without
+        updating MCP schemas used to require a manual edit in
+        three places. Now they all derive from one source —
+        this test fails loudly if someone re-introduces a
+        hardcoded list.
+        """
+        from attune_help.engine import VALID_RENDERERS
+        from attune_help.mcp.handlers import _VALID_RENDERERS
+
+        # Handler allowlist = engine - {"auto"} (auto is
+        # meaningless across a protocol boundary).
+        assert _VALID_RENDERERS == VALID_RENDERERS - {"auto"}
+
+        server = AttuneHelpMCPServer()
+        schema_enum = set(
+            server.tools["lookup_topic"]["input_schema"]["properties"]["renderer"]["enum"]
+        )
+        assert schema_enum == _VALID_RENDERERS
+
+    def test_json_renderer_accepted(self) -> None:
+        """Regression: v0.4.0 added the `json` renderer to
+        the engine but forgot to propagate it to the MCP layer."""
+        server = AttuneHelpMCPServer()
+        uid = f"test-json-renderer-{int(time.time() * 1000000)}"
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {
+                    "topic": "bug-predict",
+                    "user_id": uid,
+                    "renderer": "json",
+                },
+            )
+        )
+        assert r["success"], r
+        import json as _json
+
+        payload = _json.loads(r["rendered"])
+        assert "template_id" in payload
+        assert "sections" in payload
 
 
 # -- lookup_list -----------------------------------------------------
@@ -305,11 +359,79 @@ class TestLookupReset:
         r = asyncio.run(server.call_tool("lookup_reset", {"user_id": uid}))
         assert r["success"], r
         assert r["user_id"] == uid
+        assert r["topic"] is None
 
     def test_empty_user_id_rejected(self) -> None:
         server = AttuneHelpMCPServer()
         r = asyncio.run(server.call_tool("lookup_reset", {"user_id": ""}))
         assert not r["success"]
+
+    def test_reset_single_topic_preserves_others(self) -> None:
+        """Resetting one topic must not clear other topics."""
+        from attune_help.storage import LocalFileStorage
+
+        server = AttuneHelpMCPServer()
+        uid = f"test-reset-single-{int(time.time() * 1000000)}"
+
+        # Seed two topics into the session.
+        asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "bug-predict", "user_id": uid},
+            )
+        )
+        asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "code-quality", "user_id": uid},
+            )
+        )
+        mid = LocalFileStorage().get_session(uid)
+        assert "bug-predict" in mid["topics"]
+        assert "code-quality" in mid["topics"]
+
+        # Reset one topic only.
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_reset",
+                {"user_id": uid, "topic": "bug-predict"},
+            )
+        )
+        assert r["success"], r
+        assert r["topic"] == "bug-predict"
+
+        after = LocalFileStorage().get_session(uid)
+        assert "bug-predict" not in after["topics"]
+        assert "code-quality" in after["topics"]
+
+    def test_reset_all_clears_topics_map(self) -> None:
+        """Reset without a topic must clear the full per-topic map."""
+        from attune_help.storage import LocalFileStorage
+
+        server = AttuneHelpMCPServer()
+        uid = f"test-reset-all-{int(time.time() * 1000000)}"
+        asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "bug-predict", "user_id": uid},
+            )
+        )
+        asyncio.run(server.call_tool("lookup_reset", {"user_id": uid}))
+        after = LocalFileStorage().get_session(uid)
+        assert after["topics"] == {}
+        assert after["order"] == []
+        assert after["last_topic"] is None
+
+    def test_reset_rejects_empty_topic(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_reset",
+                {"user_id": "x", "topic": ""},
+            )
+        )
+        assert not r["success"]
+        assert "topic" in r["error"]
 
 
 # -- lookup_status ---------------------------------------------------
@@ -381,6 +503,194 @@ class TestLookupStatus:
         server = AttuneHelpMCPServer()
         r = asyncio.run(server.call_tool("lookup_status", {"user_id": ""}))
         assert not r["success"]
+
+    def test_status_returns_topics_map(self) -> None:
+        """Status must expose the per-topic dict + LRU order
+        so clients can render a full session view."""
+        server = AttuneHelpMCPServer()
+        uid = f"test-status-topics-{int(time.time() * 1000000)}"
+
+        asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "bug-predict", "user_id": uid},
+            )
+        )
+        asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "code-quality", "user_id": uid},
+            )
+        )
+
+        r = asyncio.run(server.call_tool("lookup_status", {"user_id": uid}))
+        assert r["success"], r
+        assert "topics" in r
+        assert "order" in r
+        assert "bug-predict" in r["topics"]
+        assert "code-quality" in r["topics"]
+        assert r["order"][-1] == "code-quality"
+
+    def test_fresh_session_has_empty_topics_map(self) -> None:
+        server = AttuneHelpMCPServer()
+        uid = f"test-status-empty-{int(time.time() * 1000000)}"
+        r = asyncio.run(server.call_tool("lookup_status", {"user_id": uid}))
+        assert r["success"], r
+        assert r["topics"] == {}
+        assert r["order"] == []
+
+
+# -- lookup_simpler (T4) ---------------------------------------------
+
+
+class TestLookupSimplerMCP:
+    """Handler-level tests for lookup_simpler."""
+
+    def test_simpler_steps_down_after_climb(self) -> None:
+        """Climb to depth 2, then simpler should return to depth 1."""
+        server = AttuneHelpMCPServer()
+        uid = f"test-simpler-{int(time.time() * 1000000)}"
+
+        for _ in range(3):
+            r = asyncio.run(
+                server.call_tool(
+                    "lookup_topic",
+                    {"topic": "security-audit", "user_id": uid},
+                )
+            )
+            assert r["success"], r
+        assert r["depth_level"] == 2
+
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_simpler",
+                {"topic": "security-audit", "user_id": uid},
+            )
+        )
+        assert r["success"], r
+        assert r["topic"] == "security-audit"
+        assert r["depth_level"] == 1
+        assert r["rendered"]
+
+    def test_simpler_clamps_at_zero(self) -> None:
+        server = AttuneHelpMCPServer()
+        uid = f"test-simpler-zero-{int(time.time() * 1000000)}"
+        asyncio.run(
+            server.call_tool(
+                "lookup_topic",
+                {"topic": "security-audit", "user_id": uid},
+            )
+        )
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_simpler",
+                {"topic": "security-audit", "user_id": uid},
+            )
+        )
+        assert r["success"], r
+        assert r["depth_level"] == 0
+
+    def test_simpler_missing_topic_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_simpler", {}))
+        assert not r["success"]
+        assert "topic is required" in r["error"]
+
+    def test_simpler_unknown_topic_returns_error(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_simpler",
+                {"topic": "definitely-not-real-xyz"},
+            )
+        )
+        assert not r["success"]
+
+    def test_simpler_invalid_renderer_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(
+            server.call_tool(
+                "lookup_simpler",
+                {"topic": "security-audit", "renderer": "bogus"},
+            )
+        )
+        assert not r["success"]
+        assert "renderer must be one of" in r["error"]
+
+
+# -- Discovery tools (T3) --------------------------------------------
+
+
+class TestListTopicsMCP:
+    """Handler-level tests for list_topics."""
+
+    def test_no_filter_returns_topics(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_list_topics", {}))
+        assert r["success"], r
+        assert r["count"] > 0
+        assert isinstance(r["topics"], list)
+
+    def test_type_filter(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_list_topics", {"type": "concepts"}))
+        assert r["success"], r
+        assert r["type_filter"] == "concepts"
+        assert r["count"] > 0
+
+    def test_limit_applied(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_list_topics", {"limit": 3}))
+        assert r["success"], r
+        assert r["count"] <= 3
+
+    def test_invalid_limit_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_list_topics", {"limit": 0}))
+        assert not r["success"]
+        assert "limit" in r["error"]
+
+
+class TestSearchTopicsMCP:
+    """Handler-level tests for search_topics."""
+
+    def test_search_finds_misspelling(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_search", {"query": "secrity"}))
+        assert r["success"], r
+        assert r["count"] > 0
+        first = r["hits"][0]
+        assert "slug" in first
+        assert "score" in first
+        assert isinstance(first["score"], float)
+
+    def test_missing_query_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_search", {}))
+        assert not r["success"]
+        assert "query is required" in r["error"]
+
+    def test_empty_query_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_search", {"query": ""}))
+        assert not r["success"]
+
+
+class TestSuggestTopicsMCP:
+    """Handler-level tests for suggest_topics."""
+
+    def test_suggest_returns_slugs(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_suggest", {"topic": "secur"}))
+        assert r["success"], r
+        assert isinstance(r["suggestions"], list)
+        assert all(isinstance(s, str) for s in r["suggestions"])
+
+    def test_missing_topic_rejected(self) -> None:
+        server = AttuneHelpMCPServer()
+        r = asyncio.run(server.call_tool("lookup_suggest", {}))
+        assert not r["success"]
+        assert "topic is required" in r["error"]
 
 
 # -- Dispatch safety -------------------------------------------------

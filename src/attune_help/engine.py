@@ -75,7 +75,12 @@ _RENDERERS = {
     "json": render_json,
 }
 
-_VALID_RENDERERS = frozenset({*_RENDERERS.keys(), "auto"})
+#: Names of every renderer this engine accepts, including
+#: the ``"auto"`` sentinel. Exported so consumers (notably
+#: the MCP layer) can derive their own allowlists from a
+#: single source of truth instead of re-declaring it.
+VALID_RENDERERS = frozenset({*_RENDERERS.keys(), "auto"})
+_VALID_RENDERERS = VALID_RENDERERS
 
 _DEPTH_PROMPTS = {
     0: '\n\n*(concept view — say "tell me more" for step-by-step)*',
