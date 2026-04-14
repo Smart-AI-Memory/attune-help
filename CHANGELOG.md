@@ -2,6 +2,37 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.6.0 — Unreleased
+
+### Added
+
+- **User-facing CLI** — new `attune-help` console script
+  exposes `lookup`, `list`, `search`, and `simpler`
+  subcommands over the same `HelpEngine` API the MCP
+  server uses. Terminal users no longer need an MCP
+  client to access the help content. `python -m
+  attune_help` also works.
+
+### Changed
+
+- **Development Status promoted to Beta** (was Alpha).
+  attune-help is now a core dependency of attune-ai
+  (Production/Stable), so the Alpha classifier understated
+  the package's actual maturity. Version jumps to `0.6.0`
+  rather than `0.5.2` to mark the shift and give
+  downstream consumers a deliberate upgrade point.
+- **PyPI project URLs point to the extracted repo**
+  (`Smart-AI-Memory/attune-help`) instead of the parent
+  `attune-ai` monorepo. Also added `Changelog` and
+  `Issues` URLs.
+
+### Consumer impact
+
+- attune-ai and attune-author both now pin
+  `attune-help>=0.5.1,<0.6`. Those caps will need to be
+  bumped to `<0.7` at release time, coordinated across
+  the two consumer repos.
+
 ## 0.5.1 — 2026-04-12
 
 ### Fixed
