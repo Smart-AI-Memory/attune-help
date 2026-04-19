@@ -36,3 +36,13 @@ Thumbs.db
 
 # uv
 .uv/
+
+# Secrets
+.env
+.env.local
+
+# Local planning artifacts
+.claude/
+
+# Backup sidecars left by repolish_low_p1.py
+*.pre-repolish.bak

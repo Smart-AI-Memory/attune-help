@@ -29,25 +29,38 @@ security-audit:
 
 code-quality:
   hint: >
-    General code review for style, structure, lint-level
-    issues, and overall readability. Holistic quality
-    feedback, not security-specific or bug-prediction.
+    Style, lint, readability, dead code, naming, and
+    structure review on code as it stands today. Answers
+    "does this code read well?" Not scoring bug-likelihood
+    (bug-predict), not pattern-matching CVEs or OWASP
+    (security-audit), not producing a prioritized
+    restructure roadmap (refactor-plan). Surface-level
+    quality signal, not deep refactor analysis.
   not: [security-audit, bug-predict, refactor-plan]
 
 planning:
   hint: >
-    Plans a feature, architecture, or TDD strategy BEFORE
-    writing code. Pre-implementation design work — feature
-    specs, task decomposition, dependency analysis. Distinct
-    from restructuring existing code.
+    Greenfield pre-implementation design — breaks a
+    not-yet-written feature into task graphs, dependency
+    ordering, TDD scaffolds, architecture sketches. Runs
+    BEFORE any code exists. Distinct from refactor-plan
+    (which analyzes EXISTING code) and from spec (which
+    is the full brainstorm→plan→review→execute lifecycle;
+    planning is just the design step inside it).
   not: [refactor-plan, spec]
 
 refactor-plan:
   hint: >
-    Analyzes EXISTING code to produce a prioritized
-    refactoring roadmap. Post-implementation
-    restructuring — code complexity metrics, change
-    impact, migration ordering. Not green-field planning.
+    Reads EXISTING code and produces a prioritized,
+    ordered refactoring roadmap — cyclomatic complexity,
+    coupling hotspots, duplication, split-this-module
+    suggestions, migration steps within the same
+    language/framework. Distinct from planning (which
+    designs code that doesn't exist yet), from
+    code-quality (which reviews style/readability but
+    doesn't output a roadmap), and from code-migration
+    (which handles language/framework upgrades, not
+    in-place cleanup).
   not: [planning, code-quality, code-migration]
 
 spec:
@@ -82,10 +95,13 @@ debugging-sessions:
 
 workflow-orchestration:
   hint: >
-    Chains multiple analysis workflows and combines their
-    results into a single report. Multi-stage composition
-    pipeline — not an authoring workflow or a single
-    analysis tool.
+    Runs MULTIPLE existing analysis workflows in sequence
+    (or parallel) and fuses their results into one report —
+    e.g., security-audit + code-quality + smart-test in one
+    pass. A runner/composer over workflows. Distinct from
+    spec (which is a single end-to-end authoring lifecycle,
+    not a multi-workflow chain) and from coach (which is a
+    progressive-depth explainer, not an execution engine).
   not: [spec, coach]
 
 release-prep:
