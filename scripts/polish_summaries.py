@@ -55,6 +55,7 @@ _TEMPLATES_DIR = _REPO_ROOT / "src" / "attune_help" / "templates"
 _FIXTURES_DIR = _TEMPLATES_DIR / "fixtures"
 _SUMMARIES_FEATURE_FILE = _TEMPLATES_DIR / "summaries.json"
 _SUMMARIES_PATH_FILE = _TEMPLATES_DIR / "summaries_by_path.json"
+_DIFF_HINTS_FILE = _REPO_ROOT / "scripts" / "differentiation_hints.yaml"
 
 _DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 _MAX_TOKENS = 400
@@ -146,6 +147,16 @@ def _load_feature_summary(feature: str) -> str:
     return data.get(feature, "")
 
 
+def _load_diff_hint(feature: str) -> dict | None:
+    """Return {'hint': str, 'not': [str]} or None if the feature has no hint."""
+    if not _DIFF_HINTS_FILE.is_file():
+        return None
+    import yaml
+
+    data = yaml.safe_load(_DIFF_HINTS_FILE.read_text(encoding="utf-8"))
+    return data.get(feature)
+
+
 def _infer_category(path: Path) -> str:
     rel = path.relative_to(_TEMPLATES_DIR)
     parts = rel.parts
@@ -178,6 +189,7 @@ def _user_prompt(
     feature: str,
     feature_summary: str,
     fixture_queries: list[str],
+    diff_hint: dict | None,
     body: str,
     min_chars: int,
     max_chars: int,
@@ -190,6 +202,24 @@ def _user_prompt(
         if fixture_queries
         else "Fixture queries: (none — derive keywords from the body)"
     )
+
+    if diff_hint:
+        not_list = diff_hint.get("not") or []
+        diff_block = (
+            "\n\nFeature differentiation — what makes THIS feature "
+            "unique vs. adjacent features that share vocabulary:\n"
+            f"  {diff_hint['hint'].strip()}\n"
+        )
+        if not_list:
+            diff_block += (
+                "  Distinguishes from: "
+                + ", ".join(sorted(not_list))
+                + " — the summary should emphasize what this "
+                "feature does that those don't.\n"
+            )
+    else:
+        diff_block = ""
+
     return (
         f"Template path: {path_rel}\n"
         f"Category: {category}\n"
@@ -197,7 +227,8 @@ def _user_prompt(
         f"Length range: {min_chars}-{max_chars} characters\n"
         f"Existing feature-keyed summary (for reference only — "
         f"don't just copy it): {feature_summary!r}\n\n"
-        f"{fixture_block}\n\n"
+        f"{fixture_block}"
+        f"{diff_block}\n\n"
         f"Template body:\n\n{body_excerpt}"
     )
 
@@ -253,12 +284,14 @@ def _polish_one(
     path: Path,
     features: list[str],
     model: str,
+    use_diff_hints: bool,
 ) -> tuple[str, list[str]]:
     rel = path.relative_to(_TEMPLATES_DIR).as_posix()
     category = _infer_category(path)
     feature = _infer_feature_from_path(path, features) or ""
     feature_summary = _load_feature_summary(feature) if feature else ""
     fixture_queries = _load_fixture_keywords(feature) if feature else []
+    diff_hint = _load_diff_hint(feature) if (feature and use_diff_hints) else None
     min_chars, max_chars = _length_bounds(category)
     body = path.read_text(encoding="utf-8")
 
@@ -268,6 +301,7 @@ def _polish_one(
         feature=feature or "(unknown)",
         feature_summary=feature_summary,
         fixture_queries=fixture_queries,
+        diff_hint=diff_hint,
         body=body,
         min_chars=min_chars,
         max_chars=max_chars,
@@ -296,6 +330,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Cap total templates polished this run (useful for testing)",
     )
     parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument(
+        "--no-diff-hints",
+        action="store_true",
+        help="Disable feature-differentiation hints (default on)",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -337,7 +376,9 @@ def main(argv: list[str] | None = None) -> int:
     for md in candidates:
         rel = md.relative_to(_TEMPLATES_DIR).as_posix()
         try:
-            summary, issues = _polish_one(md, all_features, args.model)
+            summary, issues = _polish_one(
+                md, all_features, args.model, use_diff_hints=not args.no_diff_hints
+            )
         except Exception as exc:  # noqa: BLE001
             logger.exception("failed to polish %s", rel)
             issues_report.append((rel, [f"error: {exc}"]))
