@@ -1,0 +1,33 @@
+version: 1
+feature: code-migration
+expected_in_top_3:
+  - concepts/task-code-migration.md
+  - quickstarts/task-code-migration.md
+  - references/task-code-migration.md
+  - tasks/task-code-migration.md
+queries:
+  - "plan code migration"
+  - "python version upgrade"
+  - "framework swap"
+  - "codemod"
+  - "code migration strategy"
+  - "upgrade python version safely"
+  - "migrate to new framework"
+  - "compatibility checking"
+  - "legacy code modernization"
+  - "refactor codebase"
+  - "automated code transformation"
+  - "breaking change migration"
+  - "dependency upgrade path"
+  - "code modernization plan"
+  - "deprecation handling"
+  - "migrate legacy python"
+  - "framework migration guide"
+  - "batch code refactoring"
+  - "upgrade compatibility matrix"
+  - "code rewrite automation"
+  - "transition to new version"
+  - "systematic code upgrade"
+  - "api migration strategy"
+  - "large scale refactoring"
+  - "backwards compatibility migration"

@@ -1,0 +1,33 @@
+version: 1
+feature: database-migrations
+expected_in_top_3:
+  - concepts/task-database-migrations.md
+  - quickstarts/task-database-migrations.md
+  - references/task-database-migrations.md
+  - tasks/task-database-migrations.md
+queries:
+  - "database migrations"
+  - "schema changes safely"
+  - "alembic migration"
+  - "rollback database changes"
+  - "zero downtime migrations"
+  - "data migration script"
+  - "migration versioning"
+  - "alter table migration"
+  - "database schema evolution"
+  - "migration rollback strategy"
+  - "safe schema updates"
+  - "alembic upgrade downgrade"
+  - "migration history tracking"
+  - "database change management"
+  - "deploy schema changes"
+  - "migration without downtime"
+  - "forward backward compatibility"
+  - "migration testing"
+  - "sql migration scripts"
+  - "database version control"
+  - "handle data transformations"
+  - "migration dependencies"
+  - "revert database migration"
+  - "production schema migration"
+  - "migration best practices"

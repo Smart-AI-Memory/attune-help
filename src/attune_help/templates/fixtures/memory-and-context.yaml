@@ -1,0 +1,33 @@
+version: 1
+feature: memory-and-context
+expected_in_top_3:
+  - concepts/tool-memory-and-context.md
+  - quickstarts/skill-memory-and-context.md
+  - references/skill-memory-and-context.md
+  - tasks/use-memory-and-context.md
+queries:
+  - "memory and context"
+  - "store persistent notes across sessions"
+  - "remember project decisions between sessions"
+  - "recall debugging patterns later"
+  - "save context across claude sessions"
+  - "persistent session memory"
+  - "search stored memories"
+  - "how to remember project conventions"
+  - "keep state across sessions"
+  - "architecture decision storage"
+  - "team preferences and rules"
+  - "forget old memories"
+  - "session context vs persistent memory"
+  - "save working state"
+  - "retrieve past decisions"
+  - "store naming conventions"
+  - "find debugging patterns"
+  - "what persists between sessions"
+  - "temporary vs permanent context"
+  - "project knowledge storage"
+  - "claude memory skill"
+  - "context retrieval"
+  - "notes that survive sessions"
+  - "remember why we chose this"
+  - "store and recall session notes"

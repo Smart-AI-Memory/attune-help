@@ -1,0 +1,33 @@
+version: 1
+feature: fix-test
+expected_in_top_3:
+  - concepts/tool-fix-test.md
+  - quickstarts/skill-fix-test.md
+  - references/skill-fix-test.md
+  - tasks/use-fix-test.md
+queries:
+  - "fix failing test"
+  - "auto-fix broken tests"
+  - "diagnose test failures"
+  - "fix test automatically"
+  - "test repair tool"
+  - "why is my test failing"
+  - "fix import error in test"
+  - "resolve mock mismatch"
+  - "fix assertion drift"
+  - "repair stale test patches"
+  - "handle type errors in tests"
+  - "missing fixture fix"
+  - "test environment issue"
+  - "refactor tests after change"
+  - "batch repair test suite"
+  - "pytest failure diagnosis"
+  - "classify test root cause"
+  - "ci test failures"
+  - "broken test after upgrade"
+  - "test traceback analysis"
+  - "auto-repair failing tests"
+  - "fix test in one go"
+  - "rename module break tests"
+  - "dependency upgrade test fix"
+  - "rerun test after repair"

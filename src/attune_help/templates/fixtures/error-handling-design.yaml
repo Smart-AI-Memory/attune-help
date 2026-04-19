@@ -1,0 +1,33 @@
+version: 1
+feature: error-handling-design
+expected_in_top_3:
+  - concepts/task-error-handling-design.md
+  - quickstarts/task-error-handling-design.md
+  - references/task-error-handling-design.md
+  - tasks/task-error-handling-design.md
+queries:
+  - "error handling design patterns"
+  - "when to catch exceptions"
+  - "when to propagate errors"
+  - "exception hierarchy design"
+  - "how to structure exception classes"
+  - "error logging best practices"
+  - "catch vs throw decisions"
+  - "designing custom exceptions"
+  - "exception handling architecture"
+  - "error propagation strategy"
+  - "exception class hierarchy"
+  - "logging errors effectively"
+  - "fail fast vs resilient error handling"
+  - "exception flow control"
+  - "error boundary design"
+  - "exception chaining patterns"
+  - "defensive error handling"
+  - "graceful error degradation"
+  - "exception context preservation"
+  - "error recovery patterns"
+  - "structured exception handling"
+  - "exception semantics design"
+  - "error handling at layer boundaries"
+  - "exception contract design"
+  - "monitoring exception flows"

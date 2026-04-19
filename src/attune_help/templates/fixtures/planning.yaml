@@ -1,0 +1,33 @@
+version: 1
+feature: planning
+expected_in_top_3:
+  - concepts/tool-planning.md
+  - quickstarts/skill-planning.md
+  - references/skill-planning.md
+  - tasks/use-planning.md
+queries:
+  - "plan a new feature"
+  - "architecture review before coding"
+  - "tdd strategy and test structure"
+  - "break down work into tasks"
+  - "feature planning tool"
+  - "acceptance criteria and scope"
+  - "dependency mapping and risk assessment"
+  - "design decisions evaluation"
+  - "prevent scope creep planning"
+  - "test-first approach planning"
+  - "feature spec generation"
+  - "effort estimation for tasks"
+  - "coupling and circular dependency analysis"
+  - "what does done look like"
+  - "task breakdown with dependencies"
+  - "red green refactor planning"
+  - "scaling concerns architecture"
+  - "blocker and unknown identification"
+  - "parallel work identification"
+  - "design before implementation"
+  - "epic planning and decomposition"
+  - "component analysis tool"
+  - "mitigation strategy planning"
+  - "non-goals definition"
+  - "structured plan generation"

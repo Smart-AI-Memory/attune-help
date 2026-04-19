@@ -1,0 +1,33 @@
+version: 1
+feature: api-endpoint-design
+expected_in_top_3:
+  - concepts/task-api-endpoint-design.md
+  - quickstarts/task-api-endpoint-design.md
+  - references/task-api-endpoint-design.md
+  - tasks/task-api-endpoint-design.md
+queries:
+  - "rest endpoint design best practices"
+  - "how to design api endpoints"
+  - "api endpoint validation"
+  - "rest api endpoint structure"
+  - "designing restful endpoints"
+  - "api error response handling"
+  - "endpoint authentication patterns"
+  - "api authentication best practices"
+  - "request validation for endpoints"
+  - "api pagination implementation"
+  - "paginate api results"
+  - "api versioning strategies"
+  - "version control for endpoints"
+  - "rest endpoint error codes"
+  - "http status codes api"
+  - "api rate limiting"
+  - "endpoint security headers"
+  - "rest api design guidelines"
+  - "api input validation"
+  - "endpoint response format"
+  - "designing scalable api endpoints"
+  - "api endpoint documentation"
+  - "rest conventions"
+  - "endpoint routing patterns"
+  - "api contract design"

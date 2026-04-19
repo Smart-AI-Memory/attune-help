@@ -1,0 +1,33 @@
+version: 1
+feature: code-quality
+expected_in_top_3:
+  - concepts/tool-code-quality.md
+  - quickstarts/skill-code-quality.md
+  - references/skill-code-quality.md
+  - tasks/use-code-quality.md
+queries:
+  - "code quality review"
+  - "review code for bugs"
+  - "style and correctness check"
+  - "unified code analysis"
+  - "catch bugs before pull request"
+  - "code quality score"
+  - "linting and bug scanning"
+  - "structural health check"
+  - "likely bugs detector"
+  - "code smell detection"
+  - "pre-commit quality gate"
+  - "refactor verification"
+  - "unused imports and naming"
+  - "mutable defaults and race conditions"
+  - "high coupling detection"
+  - "god class finder"
+  - "unreachable code detector"
+  - "broad exception handler"
+  - "circular dependency check"
+  - "eval and exec scanner"
+  - "code quality in one pass"
+  - "quick style check"
+  - "deep security analysis"
+  - "architecture review"
+  - "test gap detection"

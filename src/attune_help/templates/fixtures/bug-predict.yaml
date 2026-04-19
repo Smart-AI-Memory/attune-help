@@ -1,0 +1,35 @@
+version: 1
+feature: bug-predict
+expected_in_top_3:
+  - concepts/tool-bug-predict.md
+  - quickstarts/skill-bug-predict.md
+  - references/skill-bug-predict.md
+  - references/tool-bug-predict.md
+  - tasks/use-bug-predict.md
+  - tips/after-bug-predict.md
+queries:
+  - "bug prediction"
+  - "predict bugs in code"
+  - "where are bugs likely"
+  - "scan for dangerous eval"
+  - "find code injection vectors"
+  - "detect bare except patterns"
+  - "catch unfinished code paths"
+  - "identify high complexity functions"
+  - "find hot files with bugs"
+  - "code smell detection"
+  - "pre-merge bug check"
+  - "production bug prevention"
+  - "cyclomatic complexity analysis"
+  - "change frequency hotspots"
+  - "eval exec compile detection"
+  - "exception handling issues"
+  - "todo fixme hack comments"
+  - "code review automation"
+  - "defect rate analysis"
+  - "unfinished code detection"
+  - "broadly caught exceptions"
+  - "code injection scanning"
+  - "bug pattern matching"
+  - "risk hotspot mapping"
+  - "regression prevention tool"

@@ -1,0 +1,33 @@
+version: 1
+feature: attune-hub
+expected_in_top_3:
+  - concepts/tool-attune-hub.md
+  - quickstarts/skill-attune-hub.md
+  - references/skill-attune-hub.md
+  - tasks/use-attune-hub.md
+queries:
+  - "attune hub"
+  - "hub routing"
+  - "discovery entry point"
+  - "socratic questioning"
+  - "what can attune do"
+  - "find the right skill"
+  - "skill routing"
+  - "plain english commands"
+  - "no syntax to memorize"
+  - "clarifying questions"
+  - "explore available skills"
+  - "unsure which skill to use"
+  - "starting point attune"
+  - "describe what i need"
+  - "hub vs skill directly"
+  - "intelligent skill discovery"
+  - "interactive skill finder"
+  - "route to correct skill"
+  - "attune entry point"
+  - "conversational skill routing"
+  - "find vulnerabilities or review code"
+  - "menu-free workflow"
+  - "skill catalog"
+  - "natural language skill selection"
+  - "attune hub getting started"

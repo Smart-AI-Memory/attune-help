@@ -1,0 +1,33 @@
+version: 1
+feature: dependency-management
+expected_in_top_3:
+  - concepts/task-dependency-management.md
+  - quickstarts/task-dependency-management.md
+  - references/task-dependency-management.md
+  - tasks/task-dependency-management.md
+queries:
+  - "dependency management"
+  - "manage dependencies"
+  - "dependency security check"
+  - "check dependency versions"
+  - "dependency pinning"
+  - "lock dependencies"
+  - "dependency compatibility"
+  - "version pinning best practices"
+  - "dependency licensing check"
+  - "verify dependency licenses"
+  - "dependency vulnerability scan"
+  - "update dependencies safely"
+  - "dependency version constraints"
+  - "transitive dependency management"
+  - "dependency audit"
+  - "supply chain security"
+  - "dependency risk assessment"
+  - "compatible dependency versions"
+  - "license compliance check"
+  - "dependency deprecation warning"
+  - "dependency security vulnerability"
+  - "version compatibility matrix"
+  - "dependency tree analysis"
+  - "pinned versions"
+  - "dependency update strategy"
