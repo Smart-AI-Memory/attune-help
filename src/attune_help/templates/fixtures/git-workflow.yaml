@@ -1,0 +1,33 @@
+version: 1
+feature: git-workflow
+expected_in_top_3:
+  - concepts/task-git-workflow.md
+  - quickstarts/task-git-workflow.md
+  - references/task-git-workflow.md
+  - tasks/task-git-workflow.md
+queries:
+  - "git workflow"
+  - "branch strategies"
+  - "merge conflict resolution"
+  - "resolve merge conflicts"
+  - "git rebase"
+  - "cherry pick commits"
+  - "git stash"
+  - "recover lost commits"
+  - "branching strategy"
+  - "handling conflicting changes"
+  - "interactive rebase"
+  - "squash commits"
+  - "git recovery techniques"
+  - "undo merge"
+  - "soft reset vs hard reset"
+  - "feature branch workflow"
+  - "git stash pop"
+  - "rebase vs merge"
+  - "conflict resolution strategy"
+  - "prevent merge conflicts"
+  - "git cherry pick workflow"
+  - "local branch management"
+  - "git workflow best practices"
+  - "recover deleted branch"
+  - "clean up stashed changes"

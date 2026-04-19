@@ -1,0 +1,33 @@
+version: 1
+feature: authentication-patterns
+expected_in_top_3:
+  - concepts/task-authentication-patterns.md
+  - quickstarts/task-authentication-patterns.md
+  - references/task-authentication-patterns.md
+  - tasks/task-authentication-patterns.md
+queries:
+  - "authentication patterns"
+  - "how to add authentication"
+  - "jwt implementation"
+  - "session management"
+  - "oauth2 setup"
+  - "password hashing"
+  - "csrf protection"
+  - "user login flow"
+  - "secure authentication methods"
+  - "token based auth"
+  - "implement oauth"
+  - "session vs token authentication"
+  - "hash passwords safely"
+  - "jwt vs sessions"
+  - "cross site request forgery prevention"
+  - "bearer token authentication"
+  - "authentication best practices"
+  - "stateless vs stateful auth"
+  - "credential storage"
+  - "auth security patterns"
+  - "user identity verification"
+  - "prevent csrf attacks"
+  - "session cookie security"
+  - "oauth2 flow"
+  - "secure login implementation"

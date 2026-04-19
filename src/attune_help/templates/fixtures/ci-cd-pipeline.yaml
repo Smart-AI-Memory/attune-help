@@ -1,0 +1,33 @@
+version: 1
+feature: ci-cd-pipeline
+expected_in_top_3:
+  - concepts/task-ci-cd-pipeline.md
+  - quickstarts/task-ci-cd-pipeline.md
+  - references/task-ci-cd-pipeline.md
+  - tasks/task-ci-cd-pipeline.md
+queries:
+  - "ci cd pipeline setup"
+  - "github actions workflow"
+  - "continuous integration deployment"
+  - "automate build and test"
+  - "matrix testing strategy"
+  - "cache dependencies in ci"
+  - "security gates pipeline"
+  - "automated deployment workflow"
+  - "github actions matrix"
+  - "set up github actions"
+  - "test and deploy automatically"
+  - "pipeline caching best practices"
+  - "pre-deployment security checks"
+  - "multi-platform testing"
+  - "ci cd best practices"
+  - "automated release pipeline"
+  - "build artifacts caching"
+  - "github workflow configuration"
+  - "test matrix parallel"
+  - "deployment automation"
+  - "continuous delivery setup"
+  - "release pipeline automation"
+  - "github actions security"
+  - "build pipeline optimization"
+  - "automated quality gates"

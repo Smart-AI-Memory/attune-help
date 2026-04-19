@@ -1,0 +1,33 @@
+version: 1
+feature: package-publishing
+expected_in_top_3:
+  - concepts/task-package-publishing.md
+  - quickstarts/task-package-publishing.md
+  - references/task-package-publishing.md
+  - tasks/task-package-publishing.md
+queries:
+  - "publish python package"
+  - "release package to pypi"
+  - "package publishing workflow"
+  - "how to publish package"
+  - "python package distribution"
+  - "bump version and publish"
+  - "testpypi before production"
+  - "build and publish python"
+  - "release new package version"
+  - "verify published package"
+  - "staging package publish"
+  - "production package release"
+  - "pypi upload process"
+  - "python package deployment"
+  - "automated package publishing"
+  - "package version management"
+  - "publish to package index"
+  - "test package on testpypi"
+  - "build wheel and publish"
+  - "package release checklist"
+  - "distribute python module"
+  - "push package to registry"
+  - "package management workflow"
+  - "version bump before release"
+  - "end to end package release"

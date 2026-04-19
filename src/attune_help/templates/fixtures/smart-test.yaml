@@ -1,0 +1,33 @@
+version: 1
+feature: smart-test
+expected_in_top_3:
+  - concepts/tool-smart-test.md
+  - quickstarts/skill-smart-test.md
+  - references/skill-smart-test.md
+  - tasks/use-smart-test.md
+queries:
+  - "smart test"
+  - "generate pytest tests"
+  - "find untested code"
+  - "test coverage gaps"
+  - "missing test coverage"
+  - "generate tests for functions"
+  - "find uncovered branches"
+  - "error path testing"
+  - "boundary value tests"
+  - "edge case test generation"
+  - "test gap analysis"
+  - "what code lacks tests"
+  - "pytest test writer"
+  - "parametrized test generation"
+  - "exception handler tests"
+  - "untested public apis"
+  - "coverage analysis tool"
+  - "bootstrap tests legacy code"
+  - "test edge cases automatically"
+  - "input combination testing"
+  - "none handling tests"
+  - "empty input edge cases"
+  - "pre-release test coverage check"
+  - "catch untested error paths"
+  - "improve code coverage quickly"

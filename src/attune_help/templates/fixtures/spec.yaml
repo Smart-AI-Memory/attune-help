@@ -1,0 +1,35 @@
+version: 1
+feature: spec
+expected_in_top_3:
+  - concepts/tool-spec.md
+  - quickstarts/skill-spec.md
+  - references/skill-spec.md
+  - tasks/use-spec.md
+  - tips/after-10-inspects.md
+  - tips/after-first-inspect.md
+queries:
+  - "spec driven development"
+  - "brainstorm plan review approve execute"
+  - "structured planning workflow"
+  - "how to plan code before writing"
+  - "spec-first approach"
+  - "break work into tasks with acceptance criteria"
+  - "get approval before implementation"
+  - "decompose feature into ordered tasks"
+  - "quality gates per task"
+  - "prevent scope creep with planning"
+  - "socratic planning session"
+  - "design review before coding"
+  - "what does done look like"
+  - "auditable design decisions"
+  - "task acceptance criteria"
+  - "risk review for refactors"
+  - "lock plan before execution"
+  - "multi-file feature planning"
+  - "clarifying questions about requirements"
+  - "explore problem space first"
+  - "walk through plan for gaps"
+  - "approval gate before changes"
+  - "state file tracking progress"
+  - "ambiguous requirements planning"
+  - "handoff implementation documentation"

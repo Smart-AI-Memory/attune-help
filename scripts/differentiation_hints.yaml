@@ -1,0 +1,204 @@
+# Feature differentiation hints for the polish pipeline.
+#
+# Each hint tells the LLM what makes THIS feature unique
+# vs. adjacent features that share vocabulary. The polish
+# prompt injects the hint after the fixture-query block so
+# the resulting summary emphasizes the feature's USP rather
+# than generic keywords the neighbor features also own.
+#
+# Format: per-feature one-sentence differentiation,
+# followed by an optional "not:" list naming the features
+# that compete for overlapping queries.
+
+bug-predict:
+  hint: >
+    PREDICTS where bugs will surface in your codebase via
+    quantitative risk scoring — cyclomatic complexity,
+    change-frequency hotspots, bare-except patterns,
+    unfinished code paths. Forward-looking analysis, not
+    known-CVE scanning.
+  not: [security-audit, code-quality, error-handling-design]
+
+security-audit:
+  hint: >
+    Scans for known security vulnerabilities — OWASP
+    patterns, CVE-class issues, hardcoded secrets, injection
+    risks. Pattern-detection of known-bad signatures, not
+    predictive risk scoring.
+  not: [bug-predict, dependency-management]
+
+code-quality:
+  hint: >
+    General code review for style, structure, lint-level
+    issues, and overall readability. Holistic quality
+    feedback, not security-specific or bug-prediction.
+  not: [security-audit, bug-predict, refactor-plan]
+
+planning:
+  hint: >
+    Plans a feature, architecture, or TDD strategy BEFORE
+    writing code. Pre-implementation design work — feature
+    specs, task decomposition, dependency analysis. Distinct
+    from restructuring existing code.
+  not: [refactor-plan, spec]
+
+refactor-plan:
+  hint: >
+    Analyzes EXISTING code to produce a prioritized
+    refactoring roadmap. Post-implementation
+    restructuring — code complexity metrics, change
+    impact, migration ordering. Not green-field planning.
+  not: [planning, code-quality, code-migration]
+
+spec:
+  hint: >
+    End-to-end spec-driven development workflow —
+    brainstorm → plan → review → approve → execute.
+    A full authoring pipeline, not a standalone planning
+    phase or workflow runner.
+  not: [planning, workflow-orchestration]
+
+smart-test:
+  hint: >
+    Generates new pytest tests for untested code — discovers
+    untested public APIs, writes parametrized tests with
+    edge cases and error paths. Test CREATION.
+  not: [fix-test, code-quality]
+
+fix-test:
+  hint: >
+    Repairs EXISTING failing tests — diagnoses root cause,
+    classifies the failure (flaky, bad assertion, env
+    issue), applies targeted fixes. Test REPAIR, not
+    creation.
+  not: [smart-test, debugging-sessions]
+
+debugging-sessions:
+  hint: >
+    Systematic debugging strategies for arbitrary code —
+    breakpoints, tracing, binary search, profiling, common
+    gotchas. General-purpose debugging, not test-specific.
+  not: [fix-test, bug-predict]
+
+workflow-orchestration:
+  hint: >
+    Chains multiple analysis workflows and combines their
+    results into a single report. Multi-stage composition
+    pipeline — not an authoring workflow or a single
+    analysis tool.
+  not: [spec, coach]
+
+release-prep:
+  hint: >
+    Pre-release go/no-go assessment — health checks, security
+    audit, changelog verification, deployment readiness.
+    Release-specific readiness, not general quality review.
+  not: [security-audit, code-quality, ci-cd-pipeline]
+
+deep-review:
+  hint: >
+    In-depth PR or code review with architectural analysis
+    and multi-dimensional quality scoring. Deeper than
+    code-quality, narrower than audit.
+  not: [code-quality, security-audit]
+
+doc-gen:
+  hint: >
+    Generates documentation from source code — docstrings,
+    README sections, API references. Content CREATION from
+    code, not maintenance or orchestration.
+  not: [doc-audit, doc-orchestrator]
+
+coach:
+  hint: >
+    Progressive-depth explainer for any Attune topic —
+    concept → how-to → full reference. User-facing help
+    exploration, not a workflow runner or spec tool.
+  not: [attune-hub, help-lookup]
+
+attune-hub:
+  hint: >
+    Entry-point discovery tool that Socratically routes
+    users to the right skill based on their stated goal.
+    A dispatcher, not a reference or help system.
+  not: [coach, spec]
+
+memory-and-context:
+  hint: >
+    Persistent cross-session memory — stores and retrieves
+    notes, preferences, project state. Session continuity,
+    not a help tool or workflow runner.
+
+dependency-management:
+  hint: >
+    Guidance for adding or updating package dependencies —
+    security, compatibility, licensing, pinning. Package-
+    level concerns, not codebase-level security scanning.
+  not: [security-audit, package-publishing]
+
+error-handling-design:
+  hint: >
+    Design guidance for HOW to structure error handling —
+    when to catch vs propagate, exception hierarchies,
+    logging patterns. Architectural design advice, not bug
+    detection.
+  not: [bug-predict, debugging-sessions]
+
+configuration-setup:
+  hint: >
+    How to set up project configuration — env vars, config
+    files, secrets management, validation patterns.
+  not: [security-audit, dependency-management]
+
+api-endpoint-design:
+  hint: >
+    How to design REST endpoints — validation, error
+    responses, authentication, pagination, versioning.
+    API-design guidance, not implementation tool.
+
+database-migrations:
+  hint: >
+    How to change a database schema safely — Alembic,
+    rollbacks, zero-downtime deploys, data migrations.
+    Schema-change guidance, not general migrations.
+  not: [code-migration]
+
+git-workflow:
+  hint: >
+    Branch strategies, merge conflict resolution, rebase,
+    cherry-pick, stash, and recovery. Git-specific
+    guidance.
+
+logging-observability:
+  hint: >
+    How to set up structured logging — log levels,
+    correlation IDs, PII scrubbing, rotation. Runtime
+    observability setup.
+  not: [debugging-sessions, configuration-setup]
+
+authentication-patterns:
+  hint: >
+    How to add authentication — JWT, sessions, OAuth2,
+    password hashing, CSRF protection.
+  not: [security-audit]
+
+package-publishing:
+  hint: >
+    How to publish a Python package — version bump, build,
+    TestPyPI, production publish, verify. PyPI/packaging
+    workflow.
+  not: [release-prep, dependency-management]
+
+ci-cd-pipeline:
+  hint: >
+    How to set up CI/CD — GitHub Actions, matrix testing,
+    caching, security gates, deployment. Pipeline
+    configuration guidance.
+  not: [release-prep, package-publishing]
+
+code-migration:
+  hint: >
+    How to plan code migrations — Python version upgrades,
+    framework swaps, codemods, compatibility layers. Large-
+    scale code change, not routine refactoring.
+  not: [refactor-plan, database-migrations]

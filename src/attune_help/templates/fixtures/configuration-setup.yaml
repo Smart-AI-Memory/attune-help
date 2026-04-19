@@ -1,0 +1,33 @@
+version: 1
+feature: configuration-setup
+expected_in_top_3:
+  - concepts/task-configuration-setup.md
+  - quickstarts/task-configuration-setup.md
+  - references/task-configuration-setup.md
+  - tasks/task-configuration-setup.md
+queries:
+  - "configuration setup"
+  - "set up project configuration"
+  - "how to configure project"
+  - "environment variables setup"
+  - "config file management"
+  - "secrets management"
+  - "configuration validation"
+  - "project config guide"
+  - "env var configuration"
+  - "setting environment variables"
+  - "config files setup"
+  - "secret handling"
+  - "validate configuration"
+  - "configuration best practices"
+  - "init project config"
+  - "configure secrets"
+  - "environment setup"
+  - "config initialization"
+  - "managing configuration files"
+  - "setup config validation"
+  - "credential management"
+  - "configuration checklist"
+  - "configure environment"
+  - "secret key setup"
+  - "project initialization config"

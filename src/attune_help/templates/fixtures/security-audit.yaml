@@ -1,0 +1,36 @@
+version: 1
+feature: security-audit
+expected_in_top_3:
+  - concepts/tool-security-audit.md
+  - quickstarts/run-security-audit.md
+  - quickstarts/skill-security-audit.md
+  - references/skill-security-audit.md
+  - references/tool-security-audit.md
+  - tasks/use-security-audit.md
+  - tips/after-security-audit.md
+queries:
+  - "security audit"
+  - "scan for vulnerabilities"
+  - "find hardcoded secrets"
+  - "detect eval exec"
+  - "check for code injection"
+  - "path traversal detection"
+  - "sql injection scanner"
+  - "owasp top 10 check"
+  - "vulnerability scanner"
+  - "secret detection"
+  - "api key in source"
+  - "command injection check"
+  - "ssrf detector"
+  - "weak crypto detection"
+  - "pre-release security check"
+  - "ci security gate"
+  - "code security scan"
+  - "find security issues"
+  - "cve scan"
+  - "penetration test prep"
+  - "credential leak finder"
+  - "unsafe eval check"
+  - "input validation audit"
+  - "security best practices check"
+  - "catch security mistakes"

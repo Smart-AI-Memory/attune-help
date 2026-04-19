@@ -2,36 +2,82 @@
 
 All notable changes to `attune-help` are documented here.
 
-## 0.6.0 — Unreleased
+## 0.7.0 — Unreleased
 
 ### Added
 
-- **User-facing CLI** — new `attune-help` console script
+- **Path-keyed summary sidecar** for RAG consumers.
+  `src/attune_help/templates/summaries_by_path.json`
+  maps template paths (`concepts/tool-bug-predict.md`)
+  to keyword-rich, declarative summaries. attune-rag's
+  `DirectoryCorpus` reads this schema directly — the
+  existing feature-keyed `summaries.json` was silently
+  ignored by path-keyed consumers.
+- **Per-feature query fixtures** under
+  `src/attune_help/templates/fixtures/{feature}.yaml`.
+  Each fixture lists 25 natural-language queries a
+  user would ask for that feature. Three jobs: polish
+  pipeline input (`target_keywords`), per-feature
+  regression benchmark, and contrastive training data
+  if embeddings ship later.
+- **Dev-only polish + benchmark scripts** under
+  `scripts/`:
+  - `generate_fixtures.py` — LLM-generates the 25-query
+    fixture per feature via Claude Haiku 4.5.
+  - `polish_summaries.py` — LLM-polishes each template
+    into a length-bounded, keyword-rich,
+    differentiation-aware summary.
+  - `benchmark_all_fixtures.py` — runs every feature's
+    fixtures through attune-rag and reports per-feature
+    + overall Precision@1 / Recall@3.
+  - `differentiation_hints.yaml` — per-feature USP
+    statements that prevent cross-routing between
+    overlapping features.
+- **User-facing CLI** — `attune-help` console script
   exposes `lookup`, `list`, `search`, and `simpler`
   subcommands over the same `HelpEngine` API the MCP
-  server uses. Terminal users no longer need an MCP
-  client to access the help content. `python -m
-  attune_help` also works.
+  server uses. `python -m attune_help` also works.
+
+### Retrieval quality (26 features × 25 queries = 650)
+
+| Metric | Before (0.5.1) | After (0.7.0) |
+|---|---|---|
+| Precision@1 | ~0% effective (summaries ignored) | **71.7%** |
+| Recall@3 | ~0% effective | **81.5%** |
+
+Clears the 70% P@1 gate pre-committed in
+[attune-ai/docs/rag/embeddings-decision-2026-04-17.md](https://github.com/Smart-AI-Memory/attune-ai/blob/main/docs/rag/embeddings-decision-2026-04-17.md).
+Moves the fastembed v0.2.0 embeddings track from
+"committed next milestone" to "deferred / optional".
+
+Known quality variance: 6 features below the 60% P@1
+gate (spec, code-quality, planning, refactor-plan,
+workflow-orchestration, security-audit) demonstrate
+the mutual-competition effect — once every feature has
+polished summaries, overlapping features steal each
+other's queries. Scheduled for 0.7.1 follow-up with
+targeted differentiation tuning.
 
 ### Changed
 
 - **Development Status promoted to Beta** (was Alpha).
   attune-help is now a core dependency of attune-ai
-  (Production/Stable), so the Alpha classifier understated
-  the package's actual maturity. Version jumps to `0.6.0`
-  rather than `0.5.2` to mark the shift and give
-  downstream consumers a deliberate upgrade point.
-- **PyPI project URLs point to the extracted repo**
-  (`Smart-AI-Memory/attune-help`) instead of the parent
-  `attune-ai` monorepo. Also added `Changelog` and
-  `Issues` URLs.
+  (Production/Stable).
+- **PyPI project URLs** point to the extracted repo
+  (`Smart-AI-Memory/attune-help`). Added `Changelog`
+  and `Issues` URLs.
 
 ### Consumer impact
 
-- attune-ai and attune-author both now pin
-  `attune-help>=0.5.1,<0.6`. Those caps will need to be
-  bumped to `<0.7` at release time, coordinated across
-  the two consumer repos.
+- attune-ai and attune-author both currently pin
+  `attune-help>=0.5.1,<0.6`. Those caps need to bump to
+  `<0.8` and attune-rag's `DirectoryCorpus` should be
+  pointed at `summaries_by_path.json` (new schema) so
+  the +72% P@1 lift actually reaches users. Tracked as
+  attune-rag 0.1.2.
+- The originally-planned 0.6.0 release (CLI + Beta
+  classifier only) was never published; its scope is
+  rolled forward into this 0.7.0 release.
 
 ## 0.5.1 — 2026-04-12
 

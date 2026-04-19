@@ -1,0 +1,34 @@
+version: 1
+feature: doc-gen
+expected_in_top_3:
+  - concepts/tool-doc-gen.md
+  - quickstarts/skill-doc-gen.md
+  - references/skill-doc-gen.md
+  - references/tool-doc-gen.md
+  - tasks/use-doc-gen.md
+queries:
+  - "generate documentation from code"
+  - "auto-generate docstrings"
+  - "doc-gen"
+  - "create api reference automatically"
+  - "generate readme sections"
+  - "write docstrings from source"
+  - "document function signatures"
+  - "auto documentation generation"
+  - "extract api docs from code"
+  - "generate google style docstrings"
+  - "document module structure"
+  - "keep docs in sync with code"
+  - "missing docstrings coverage"
+  - "generate api documentation"
+  - "docstring generator"
+  - "type hint to documentation"
+  - "code to documentation"
+  - "readme generator from code"
+  - "document public api"
+  - "architecture documentation from imports"
+  - "fill in missing documentation"
+  - "generate function documentation"
+  - "automated docstring creation"
+  - "keep documentation current"
+  - "reflect actual code in docs"

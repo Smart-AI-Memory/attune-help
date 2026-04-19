@@ -1,0 +1,34 @@
+version: 1
+feature: release-prep
+expected_in_top_3:
+  - concepts/tool-release-prep.md
+  - quickstarts/skill-release-prep.md
+  - references/skill-release-prep.md
+  - references/tool-release-prep.md
+  - tasks/use-release-prep.md
+queries:
+  - "release prep"
+  - "preflight checklist before publishing"
+  - "go no-go assessment"
+  - "is my code ready to release"
+  - "pre-release checks"
+  - "verify before shipping"
+  - "release readiness check"
+  - "catch issues before tagging"
+  - "health security changelog checks"
+  - "version consistency validation"
+  - "test pass lint clean coverage"
+  - "detect new cves before release"
+  - "changelog entry required"
+  - "dependency vulnerability scan"
+  - "semver bump validation"
+  - "pyproject.toml version check"
+  - "dist build cleanly"
+  - "secrets scan release"
+  - "pinned dependencies check"
+  - "final gate before publishing"
+  - "pre-publish quality gate"
+  - "release safety assessment"
+  - "blocking issues before pypi"
+  - "gate before tagging release"
+  - "codebase release ready"

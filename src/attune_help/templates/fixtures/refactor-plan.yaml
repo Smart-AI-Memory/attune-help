@@ -1,0 +1,35 @@
+version: 1
+feature: refactor-plan
+expected_in_top_3:
+  - concepts/tool-refactor-plan.md
+  - quickstarts/skill-refactor-plan.md
+  - references/skill-refactor-plan.md
+  - references/tool-refactor-plan.md
+  - tasks/use-refactor-plan.md
+  - tips/after-refactor-plan.md
+queries:
+  - "refactor plan"
+  - "create refactoring roadmap"
+  - "prioritized refactoring"
+  - "code refactoring guidance"
+  - "scan for code smells"
+  - "find god classes"
+  - "detect duplicate code blocks"
+  - "identify cyclomatic complexity"
+  - "find long methods"
+  - "detect dead code"
+  - "reduce code coupling"
+  - "fix feature envy"
+  - "data clump detection"
+  - "circular import finder"
+  - "deep nesting detector"
+  - "unused parameter detection"
+  - "code quality refactoring"
+  - "where should i refactor first"
+  - "refactoring prioritization"
+  - "high impact refactoring opportunities"
+  - "measure refactoring effort"
+  - "refactoring roadmap builder"
+  - "tackle structural debt"
+  - "fix naming inconsistencies"
+  - "plan code cleanup strategy"

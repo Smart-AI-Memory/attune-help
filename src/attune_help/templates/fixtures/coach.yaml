@@ -1,0 +1,33 @@
+version: 1
+feature: coach
+expected_in_top_3:
+  - concepts/tool-coach.md
+  - quickstarts/skill-coach.md
+  - references/skill-coach.md
+  - tasks/use-coach.md
+queries:
+  - "what is coach"
+  - "coach help system"
+  - "progressive depth learning"
+  - "explain attune topic"
+  - "coach skill overview"
+  - "how to use coach"
+  - "coach step by step"
+  - "coach walkthrough"
+  - "getting started with coach"
+  - "coach tutorial"
+  - "coach configuration reference"
+  - "coach all options"
+  - "coach full documentation"
+  - "coach deep dive"
+  - "tell me more about coach"
+  - "coaching on features"
+  - "ask coach a question"
+  - "coach session state"
+  - "coaching through conversation"
+  - "multi level help system"
+  - "concept to reference progression"
+  - "coach knowledge base"
+  - "understand attune faster"
+  - "learn attune inline"
+  - "coach without leaving conversation"

@@ -1,0 +1,33 @@
+version: 1
+feature: logging-observability
+expected_in_top_3:
+  - concepts/task-logging-observability.md
+  - quickstarts/task-logging-observability.md
+  - references/task-logging-observability.md
+  - tasks/task-logging-observability.md
+queries:
+  - "structured logging setup"
+  - "log levels configuration"
+  - "correlation ids tracing"
+  - "pii scrubbing logs"
+  - "log rotation policy"
+  - "how to set up logging"
+  - "observability best practices"
+  - "redact sensitive data logs"
+  - "distributed trace correlation"
+  - "configure log levels"
+  - "request tracing correlation"
+  - "log file rotation"
+  - "mask pii in logs"
+  - "structured logging framework"
+  - "debug info log levels"
+  - "error logging setup"
+  - "observability monitoring logs"
+  - "trace request ids"
+  - "log aggregation correlation"
+  - "sensitive data redaction"
+  - "debug trace logs"
+  - "production logging setup"
+  - "log filtering levels"
+  - "request correlation tracking"
+  - "telemetry logging observability"

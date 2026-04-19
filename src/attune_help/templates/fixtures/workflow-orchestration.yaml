@@ -1,0 +1,33 @@
+version: 1
+feature: workflow-orchestration
+expected_in_top_3:
+  - concepts/tool-workflow-orchestration.md
+  - quickstarts/skill-workflow-orchestration.md
+  - references/skill-workflow-orchestration.md
+  - tasks/use-workflow-orchestration.md
+queries:
+  - "workflow orchestration"
+  - "run multiple workflows together"
+  - "combine analysis results"
+  - "sequential workflow execution"
+  - "unified analysis report"
+  - "security audit code review together"
+  - "batch multiple analyses"
+  - "chained workflow analysis"
+  - "before release checklist"
+  - "comprehensive code review"
+  - "test audit security scan"
+  - "ci gate multiple checks"
+  - "deep review multi-pass"
+  - "bug prediction code quality"
+  - "documentation audit generation"
+  - "performance bottleneck detection"
+  - "release prep health check"
+  - "dependency audit changelog"
+  - "test coverage gaps"
+  - "vulnerability scan plus testing"
+  - "what workflows can run together"
+  - "combined security and quality report"
+  - "run all analyses one pass"
+  - "orchestrate multiple skill checks"
+  - "single report from many audits"
