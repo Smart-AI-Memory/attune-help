@@ -9,7 +9,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 from attune_help import HelpEngine, LocalFileStorage
 from attune_help.engine import _RENDERERS
 from attune_help.templates import PopulatedTemplate
@@ -117,7 +116,7 @@ def test_set_renderer_switches_live(tmp_path: Path) -> None:
 
 
 def test_auto_without_tty_falls_back_to_plain(tmp_path: Path) -> None:
-    eng = HelpEngine(
+    HelpEngine(
         storage=LocalFileStorage(storage_dir=tmp_path),
         renderer="auto",
     )

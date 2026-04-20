@@ -6,7 +6,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from attune_help import HelpEngine, LocalFileStorage
 from attune_help.engine import _DEPTH_PROMPTS
 

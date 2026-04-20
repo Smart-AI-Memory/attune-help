@@ -32,6 +32,12 @@ dependencies = [
 [project.optional-dependencies]
 rich = ["rich>=13.0.0"]
 plugin = ["mcp>=0.9.0"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4.0",
+    "mcp>=0.9.0",
+]
 
 [project.scripts]
 attune-help = "attune_help.cli:main"
