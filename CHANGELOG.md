@@ -2,6 +2,71 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.9.0 — 2026-04-24
+
+Supersedes the unreleased 0.8.0 draft. Combines the manifest +
+staleness extraction from that draft with multi-doc support and
+a top-level narrative-docs bucket.
+
+### Added
+
+- **`manifest.py`** — Feature manifest parser with project-doc field
+  support. Extends the `Feature` dataclass with `doc_kinds`,
+  `doc_paths` (list), `arch_path`, and `doc_nav_section` fields so
+  `features.yaml` can register generated `docs/` output paths
+  alongside existing `.help/` template mappings. Exports
+  `load_manifest`, `save_manifest`, `match_files_to_features`,
+  `resolve_topic`, `is_safe_feature_name`, and `slugify`.
+
+- **`Feature.doc_paths: list[str]`** — A feature may now register
+  multiple docs. Single-file features (e.g. `cli` →
+  `cli-reference.md`) set one entry; multi-file features (e.g.
+  `memory` with four how-to guides) set the full list.
+  `Feature.__post_init__` coalesces between `doc_path` (scalar,
+  deprecated) and `doc_paths` (list) so callers can read either
+  attribute without a None mismatch. Loader accepts both forms;
+  writer always emits `doc_paths`.
+
+- **Top-level `_docs:` bucket** — Hand-written narrative docs that
+  don't belong to any single feature (FAQ, glossary, installation,
+  etc.) can be registered in the manifest via a `_docs:` list at
+  the top level. Exposed as `FeatureManifest.docs: list[str]`.
+  Tracked for discovery and mkdocs nav; never regenerated from
+  source.
+
+- **`staleness.py`** — Dual-format staleness detection covering both
+  `.help/` templates and project `docs/` files in one
+  `check_staleness()` call. Iterates `doc_paths` so a feature with
+  multiple registered docs produces one `DocStaleness` entry per
+  path.
+
+  - Help templates: reads `source_hash` from YAML frontmatter in
+    `concept.md` (unchanged behaviour).
+  - Project docs: reads `source_hash` from an HTML comment footer
+    appended by `attune-author`'s doc generator:
+    `<!-- attune-generated: source_hash=... feature=... kind=... generated_at=... -->`.
+    Reports a doc as stale when the hash mismatches or the file is
+    absent entirely.
+
+  New data classes: `DocStaleness`, updated `StalenessReport` with
+  `help_entries` / `doc_entries` split and `stale_docs` property.
+  New helpers: `parse_doc_footer`, `build_doc_footer`,
+  `compute_source_hash`.
+
+- **Public API exports** — all new symbols are exported from
+  `attune_help.__init__` so `attune-author` can import them without
+  reaching into submodules.
+
+### Migration
+
+- Legacy manifests using `doc_path: <scalar>` continue to load —
+  the loader coalesces the scalar into a single-entry `doc_paths`
+  list. No YAML changes required for consumers still on the
+  scalar form.
+- Consumers reading attributes should prefer `feature.doc_paths`
+  going forward. `feature.doc_path` remains populated as
+  `doc_paths[0]` for backward compatibility.
+
 ## 0.7.0 — Unreleased
 
 ### Added
