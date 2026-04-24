@@ -152,7 +152,7 @@ def test_compute_source_hash_changes_on_edit(tmp_path: Path):
 
 
 def test_check_staleness_help_fresh(tmp_path: Path):
-    src = _write_src(tmp_path, "src/auth/login.py", "def login(): ...")
+    _write_src(tmp_path, "src/auth/login.py", "def login(): ...")
     help_dir = tmp_path / ".help"
     feat = Feature(name="auth", description="Auth", files=["src/auth/**"])
     manifest = _make_manifest(feat)
