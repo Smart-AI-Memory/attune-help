@@ -4,6 +4,7 @@ subtype: tabular
 name: tool-doc-orchestrator
 category: tool
 tags: [mcp, tool, workflow]
+aliases: [orchestrate documentation workflow, doc pipeline, coordinate documentation updates, documentation maintenance]
 source: src/attune/mcp/tool_schemas.py
 ---
 

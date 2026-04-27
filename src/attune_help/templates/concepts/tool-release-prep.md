@@ -2,6 +2,7 @@
 type: concept
 name: tool-release-prep
 tags: [release, publishing, ci]
+aliases: [publish to PyPI, PyPI release, cut a release, ship a version, package publishing]
 source: plugin/skills/release-prep/SKILL.md
 ---
 

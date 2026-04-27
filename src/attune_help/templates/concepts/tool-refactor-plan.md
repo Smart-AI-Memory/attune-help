@@ -2,6 +2,7 @@
 type: concept
 name: tool-refactor-plan
 tags: [refactoring, complexity, code-smells]
+aliases: [technical debt, clean up code, code cleanup, messy codebase, code smells]
 source: plugin/skills/refactor-plan/SKILL.md
 ---
 
