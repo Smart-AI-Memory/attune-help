@@ -40,6 +40,7 @@ Thumbs.db
 # Secrets
 .env
 .env.local
+.pypirc
 
 # Local planning artifacts
 .claude/
