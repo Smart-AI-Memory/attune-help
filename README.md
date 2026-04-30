@@ -223,6 +223,64 @@ class RedisStorage(SessionStorage):
     def save(self, user_id: str, state: dict) -> None: ...
 ```
 
+## Staleness Detection
+
+`attune-help` tracks whether your help templates are up to date with
+your source code using SHA-256 hashes stored in template frontmatter.
+
+### Basic usage
+
+```python
+from attune_help import load_manifest, check_staleness
+
+manifest = load_manifest(".help")
+report = check_staleness(manifest, help_dir=".help", project_root=".")
+
+for entry in report.stale_features:
+    print(f"{entry} is stale — regenerate with attune-ai")
+```
+
+### Semantic hashing (v0.10+)
+
+For pure-Python features, `compute_source_hash` automatically uses
+**semantic hashing**: only public-symbol *contracts* (parameters, return
+types, decorators, base classes) contribute to the hash. Docstring
+edits, body rewrites, and formatter passes (`black`, `ruff`) are
+ignored. This eliminates spurious template regenerations when nothing
+meaningful changed.
+
+```python
+from attune_help import compute_source_hash, compute_semantic_hash
+from attune_help.manifest import Feature
+
+feat = Feature(name="auth", description="", files=["src/auth/**"])
+
+# compute_source_hash uses semantic hashing automatically for .py-only features
+hash1, files = compute_source_hash(feat, project_root=".")
+
+# Call compute_semantic_hash directly when you need the semantic hash
+# regardless of file mix (e.g. for reporting)
+hash2, files = compute_semantic_hash(feat, project_root=".")
+```
+
+Mixed-content features (Python + Jinja, YAML, etc.) and features with
+syntax errors in their source files fall back to byte-level SHA
+automatically — no configuration required.
+
+### Corpus validation
+
+A 3-sweep validation harness ships in `scripts/validate_against_corpus.py`:
+
+```bash
+# Validate against any repo with a .help/features.yaml
+python scripts/validate_against_corpus.py --repo /path/to/your/repo
+```
+
+Sweeps: (1) parse integrity — all `.py` files parse cleanly; (2)
+determinism — identical hashes on two consecutive calls; (3) HEAD vs
+HEAD^ — classifies symbol changes as signature drift / body-only /
+add / remove.
+
 ## License
 
 Apache 2.0

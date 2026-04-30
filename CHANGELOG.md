@@ -2,9 +2,33 @@
 
 All notable changes to `attune-help` are documented here.
 
-## 0.9.1 — 2026-04-30
+## 0.10.0 — 2026-04-30
 
 ### Added
+
+- **Phase 1 semantic freshness** — `attune_help.freshness` package with
+  `SymbolExtractor` and `SymbolRecord`. Extracts normalized public-symbol
+  signatures from Python source using `ast`; stable across docstring edits,
+  body rewrites, and formatter passes, but changes on parameter, return-type,
+  decorator, or base-class edits.
+
+- **`compute_semantic_hash`** in `attune_help.staleness` (also exported from
+  `attune_help`). For pure-Python features, hashes the aggregated
+  `signature_hash` values of every public symbol rather than raw file bytes.
+  Result: docstring-only edits and `black`/`ruff` formatter passes no longer
+  trigger spurious template regeneration. Non-Python files and features with
+  mixed content fall back to the existing byte-SHA path transparently.
+  `SyntaxError` in a `.py` file also falls back gracefully.
+
+- **`compute_source_hash` is now semantic-aware** — the function signature
+  is unchanged; pure-Python features automatically use semantic hashing from
+  this release. No frontmatter format changes; existing templates regenerate
+  exactly once on the next maintenance pass and then stabilize.
+
+- **`scripts/validate_against_corpus.py`** — 3-sweep dev harness (parse
+  integrity, determinism, HEAD vs HEAD^ drift classification). Validated
+  clean against the attune-ai corpus: 323 `.py` files across 24 features,
+  zero parse errors, 24/24 deterministic, zero signature drifts.
 
 - **`aliases` frontmatter** on three templates so the alias-weighted RAG
   retriever surfaces them on synonym queries:
@@ -15,6 +39,14 @@ All notable changes to `attune-help` are documented here.
 ### Changed
 
 - `.gitignore` now excludes `.pypirc` to prevent credential leaks.
+
+### Known limitations
+
+- Pure re-export shim modules (files that only contain `from pkg import …`
+  with no function or class definitions) produce zero symbols. Features whose
+  `files:` list points exclusively to shims will hash as if empty. Mitigation:
+  list the upstream implementation file alongside the shim in `features.yaml`.
+  Full per-symbol frontmatter (Option B) is deferred pending telemetry.
 
 ---
 
