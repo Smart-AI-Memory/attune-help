@@ -41,7 +41,10 @@ def _load_fixtures() -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gate", type=float, default=0.60)
+    parser.add_argument("--gate", type=float, default=0.60,
+                        help="Per-feature P@1 gate (default: 0.60)")
+    parser.add_argument("--overall-gate", type=float, default=0.0,
+                        help="Overall P@1 gate — exit 1 if overall drops below (default: disabled)")
     parser.add_argument(
         "--summaries",
         default="summaries_by_path.json",
@@ -123,6 +126,17 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     print(f"\nFeatures below {args.gate:.0%} P@1 gate: " f"{below_gate}/{len(rows)}")
+
+    overall_p1 = total_top1 / total_queries if total_queries else 0.0
+    if args.overall_gate > 0:
+        if overall_p1 < args.overall_gate:
+            print(
+                f"\n✖ FAIL — overall P@1 {overall_p1:.1%} is below "
+                f"--overall-gate {args.overall_gate:.0%}",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"\n✔ PASS — overall P@1 {overall_p1:.1%} >= {args.overall_gate:.0%} gate")
 
     return 1 if below_gate > 0 else 0
 

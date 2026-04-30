@@ -1,0 +1,49 @@
+name: RAG Benchmark
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/attune_help/templates/summaries_by_path.json"
+      - "src/attune_help/templates/fixtures/**"
+      - "scripts/benchmark_all_fixtures.py"
+  pull_request:
+    paths:
+      - "src/attune_help/templates/summaries_by_path.json"
+      - "src/attune_help/templates/fixtures/**"
+      - "scripts/benchmark_all_fixtures.py"
+  workflow_dispatch:
+    inputs:
+      overall_gate:
+        description: "Overall P@1 gate (0.0–1.0)"
+        default: "0.73"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: RAG P@1 gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install attune-help + rag extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install "attune-rag>=0.1.0,<0.2"
+
+      - name: Run RAG benchmark
+        run: |
+          GATE=${{ github.event.inputs.overall_gate || '0.73' }}
+          python scripts/benchmark_all_fixtures.py \
+            --gate 0.0 \
+            --overall-gate "$GATE"
