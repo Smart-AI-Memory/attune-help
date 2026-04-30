@@ -142,26 +142,9 @@ def _is_excluded(path: Path) -> bool:
     return any(part in _EXCLUDED_DIRS for part in path.parts)
 
 
-def compute_source_hash(
-    feature: Feature,
-    project_root: str | Path,
-) -> tuple[str, list[str]]:
-    """Compute SHA-256 hash of a feature's source files.
-
-    Reads all files matching the feature's glob patterns, concatenates
-    their contents in sorted order, and returns the SHA-256 hex digest.
-    Excludes cache and build directories.
-
-    Args:
-        feature: The feature to hash.
-        project_root: Project root for resolving globs.
-
-    Returns:
-        Tuple of (hex digest, sorted list of matched relative paths).
-    """
-    root = Path(project_root)
+def _collect_matched_files(feature: Feature, root: Path) -> list[str]:
+    """Resolve a feature's glob patterns to a sorted list of relative paths."""
     matched: list[str] = []
-
     for pattern in feature.files:
         glob_pattern = pattern
         if glob_pattern.endswith("**"):
@@ -171,16 +154,99 @@ def compute_source_hash(
                 rel = path.relative_to(root).as_posix()
                 if rel not in matched:
                     matched.append(rel)
+    return sorted(matched)
+
+
+def compute_semantic_hash(
+    feature: Feature,
+    project_root: str | Path,
+    extractor: object | None = None,
+) -> tuple[str, list[str]]:
+    """Compute a semantic SHA-256 hash of a feature's Python source files.
+
+    For each matched ``.py`` file, hashes the normalized *signature* of
+    every public symbol (function, class, method). Docstring edits,
+    body-only changes, and formatter passes do not change the hash;
+    parameter, return-type, decorator, or base-class changes do.
+
+    Non-``.py`` files fall back to a byte-level SHA-256 per file.
+
+    Args:
+        feature: The feature to hash.
+        project_root: Project root for resolving globs.
+        extractor: Optional ``SymbolExtractor`` instance (for testing/reuse).
+
+    Returns:
+        Tuple of (hex digest, sorted list of matched relative paths).
+    """
+    from attune_help.freshness.symbols import SymbolExtractor
+
+    if extractor is None:
+        extractor = SymbolExtractor()
+
+    root = Path(project_root)
+    matched = _collect_matched_files(feature, root)
+
+    hash_parts: list[str] = []
+    for rel_path in matched:
+        abs_path = root / rel_path
+        try:
+            if abs_path.suffix == ".py":
+                try:
+                    for record in extractor.extract(abs_path):
+                        hash_parts.append(
+                            f"{rel_path}::{record.qualname}::{record.signature_hash}"
+                        )
+                except SyntaxError:
+                    content = abs_path.read_bytes()
+                    hash_parts.append(
+                        f"{rel_path}::{hashlib.sha256(content).hexdigest()}"
+                    )
+            else:
+                content = abs_path.read_bytes()
+                hash_parts.append(
+                    f"{rel_path}::{hashlib.sha256(content).hexdigest()}"
+                )
+        except OSError as e:
+            logger.warning("Cannot read %s: %s", rel_path, e)
+
+    final = hashlib.sha256("\n".join(sorted(hash_parts)).encode("utf-8")).hexdigest()
+    return final, matched
+
+
+def compute_source_hash(
+    feature: Feature,
+    project_root: str | Path,
+) -> tuple[str, list[str]]:
+    """Compute SHA-256 hash of a feature's source files.
+
+    For pure-Python features (all matched files are ``.py``), delegates to
+    ``compute_semantic_hash`` so that docstring edits and formatter passes
+    do not trigger spurious staleness. Mixed-content and non-Python features
+    use legacy byte-concatenation.
+
+    Args:
+        feature: The feature to hash.
+        project_root: Project root for resolving globs.
+
+    Returns:
+        Tuple of (hex digest, sorted list of matched relative paths).
+    """
+    root = Path(project_root)
+    matched = _collect_matched_files(feature, root)
+
+    if matched and all((root / p).suffix == ".py" for p in matched):
+        return compute_semantic_hash(feature, root)
 
     hasher = hashlib.sha256()
-    for rel_path in sorted(matched):
+    for rel_path in matched:
         try:
             content = (root / rel_path).read_bytes()
             hasher.update(content)
         except OSError as e:
             logger.warning("Cannot read %s: %s", rel_path, e)
 
-    return hasher.hexdigest(), sorted(matched)
+    return hasher.hexdigest(), matched
 
 
 # ---------------------------------------------------------------------------

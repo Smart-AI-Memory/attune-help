@@ -138,10 +138,45 @@ def test_compute_source_hash_deterministic(tmp_path: Path):
 
 
 def test_compute_source_hash_changes_on_edit(tmp_path: Path):
-    f = _write_src(tmp_path, "src/auth/login.py", "v1")
+    f = _write_src(
+        tmp_path, "src/auth/login.py", "def login(name: str) -> str:\n    return name\n"
+    )
     feat = Feature(name="auth", description="", files=["src/auth/**"])
     h1, _ = compute_source_hash(feat, tmp_path)
-    f.write_text("v2", encoding="utf-8")
+    f.write_text(
+        "def login(name: str, password: str) -> bool:\n    return True\n", encoding="utf-8"
+    )
+    h2, _ = compute_source_hash(feat, tmp_path)
+    assert h1 != h2
+
+
+def test_compute_source_hash_stable_across_docstring_edit(tmp_path: Path):
+    """Semantic hashing: docstring-only edits do not trigger staleness."""
+    f = _write_src(
+        tmp_path,
+        "src/auth/login.py",
+        'def login(name: str) -> str:\n    """Log in."""\n    return name\n',
+    )
+    feat = Feature(name="auth", description="", files=["src/auth/**"])
+    h1, _ = compute_source_hash(feat, tmp_path)
+    f.write_text(
+        'def login(name: str) -> str:\n    """Very detailed login documentation.\"\"\"\n    return name\n',
+        encoding="utf-8",
+    )
+    h2, _ = compute_source_hash(feat, tmp_path)
+    assert h1 == h2
+
+
+def test_compute_source_hash_changes_on_signature_edit(tmp_path: Path):
+    """Semantic hashing: adding a parameter changes the hash."""
+    f = _write_src(
+        tmp_path, "src/auth/login.py", "def login(name: str) -> str:\n    return name\n"
+    )
+    feat = Feature(name="auth", description="", files=["src/auth/**"])
+    h1, _ = compute_source_hash(feat, tmp_path)
+    f.write_text(
+        "def login(name: str, password: str) -> str:\n    return name\n", encoding="utf-8"
+    )
     h2, _ = compute_source_hash(feat, tmp_path)
     assert h1 != h2
 

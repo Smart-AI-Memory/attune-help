@@ -32,6 +32,7 @@ from attune_help.staleness import (
     StalenessReport,
     build_doc_footer,
     check_staleness,
+    compute_semantic_hash,
     compute_source_hash,
     parse_doc_footer,
 )
@@ -63,6 +64,7 @@ __all__ = [
     "StalenessReport",
     "build_doc_footer",
     "check_staleness",
+    "compute_semantic_hash",
     "compute_source_hash",
     "parse_doc_footer",
 ]
