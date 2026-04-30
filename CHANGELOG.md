@@ -2,6 +2,22 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.9.1 — 2026-04-30
+
+### Added
+
+- **`aliases` frontmatter** on three templates so the alias-weighted RAG
+  retriever surfaces them on synonym queries:
+  - `concepts/tool-refactor-plan.md` — aliases: technical debt, code cleanup
+  - `concepts/tool-release-prep.md` — aliases: publish to PyPI, ship, deploy
+  - `references/tool-doc-orchestrator.md` — aliases: doc pipeline, documentation workflow
+
+### Changed
+
+- `.gitignore` now excludes `.pypirc` to prevent credential leaks.
+
+---
+
 ## 0.9.0 — 2026-04-24
 
 Supersedes the unreleased 0.8.0 draft. Combines the manifest +
