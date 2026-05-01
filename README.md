@@ -281,6 +281,27 @@ determinism — identical hashes on two consecutive calls; (3) HEAD vs
 HEAD^ — classifies symbol changes as signature drift / body-only /
 add / remove.
 
+## Template aliases
+
+Templates can declare `aliases:` in their frontmatter to cover
+retrieval gaps — synonyms and alternate phrasings that keyword search
+would otherwise miss:
+
+```yaml
+---
+type: concept
+feature: tool-planning
+aliases:
+  - how to plan tools
+  - tool design principles
+  - when to use tools
+---
+```
+
+`aliases` is a YAML list of strings. The retrieval engine scores alias
+hits the same as title hits, so a query that uses a synonym routes to
+the right template even when the canonical slug has no token overlap.
+
 ## License
 
 Apache 2.0
