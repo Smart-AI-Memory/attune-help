@@ -4,6 +4,7 @@ subtype: tabular
 name: tool-doc-audit
 category: tool
 tags: [mcp, tool, workflow]
+aliases: [stale documentation, stale docs, outdated documentation, find stale docs]
 source: src/attune/mcp/tool_schemas.py
 ---
 

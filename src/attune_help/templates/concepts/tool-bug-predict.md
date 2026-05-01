@@ -2,6 +2,7 @@
 type: concept
 name: tool-bug-predict
 tags: [security, bugs, scanning]
+aliases: [risky code changes, identify files that break, runtime errors, spot bugs before deploy, risk assessment]
 source: plugin/skills/bug-predict/SKILL.md
 ---
 

@@ -2,6 +2,7 @@
 type: concept
 name: tool-fix-test
 tags: [testing, debugging, fixes]
+aliases: [CI pipeline failing, failing CI build, ci failure, fix failing pipeline, broken pipeline tests]
 source: plugin/skills/fix-test/SKILL.md
 ---
 

@@ -4,6 +4,7 @@ subtype: tabular
 name: tool-deep-review
 category: tool
 tags: [mcp, tool, workflow]
+aliases: [end-to-end review, PR review before merging, comprehensive code review, thorough review, deep dive review]
 source: src/attune/mcp/tool_schemas.py
 ---
 
