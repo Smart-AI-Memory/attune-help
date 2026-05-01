@@ -2,6 +2,7 @@
 type: concept
 name: tool-planning
 tags: [planning, architecture, design]
+aliases: [plan a feature, architect a feature, design new feature, sprint planning, scope work tasks, feature roadmap]
 source: plugin/skills/planning/SKILL.md
 ---
 
