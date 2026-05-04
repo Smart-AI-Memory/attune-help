@@ -74,6 +74,7 @@ _TOPIC_PATTERNS: dict[int, list[str]] = {
 
 # Ordered longest-first so compound prefixes match before
 # their shorter components (e.g. "ref-skill-" before "ref-").
+# Base prefixes here must stay in sync with `templates._PREFIX_MAP`.
 _COMPOUND_PREFIXES = [
     "ref-skill-",
     "ref-tool-",
@@ -83,14 +84,15 @@ _COMPOUND_PREFIXES = [
     "tas-",
     "con-tool-",
     "con-",
+    "com-",
     "err-",
-    "war-",
-    "tip-",
     "faq-",
+    "gui-",
     "not-",
     "qui-",
+    "tip-",
     "tro-",
-    "com-",
+    "war-",
 ]
 
 

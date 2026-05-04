@@ -78,18 +78,24 @@ class PopulatedTemplate:
 # Template file resolution
 # ------------------------------------------------------------------
 
+# Maps the 3-letter `{prefix}-{slug}` template-id prefix to the
+# directory the matching template lives in. Mirrors the enum in
+# `attune-rag` at `src/attune_rag/editor/template_schema.json`. Adding
+# a kind to that enum implies adding both an entry here AND the
+# corresponding subdirectory under `templates/`.
 _PREFIX_MAP = {
+    "com": "comparisons",
+    "con": "concepts",
     "err": "errors",
-    "war": "warnings",
-    "tip": "tips",
-    "ref": "references",
-    "tas": "tasks",
     "faq": "faqs",
+    "gui": "guides",
     "not": "notes",
     "qui": "quickstarts",
-    "con": "concepts",
+    "ref": "references",
+    "tas": "tasks",
+    "tip": "tips",
     "tro": "troubleshooting",
-    "com": "comparisons",
+    "war": "warnings",
 }
 
 
