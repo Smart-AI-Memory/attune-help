@@ -14,28 +14,7 @@ from attune_help.engine import (
     PopulatedTemplate,
     TemplateContext,
 )
-from attune_help.manifest import (
-    Feature,
-    FeatureManifest,
-    Manifest,
-    is_safe_feature_name,
-    load_manifest,
-    match_files_to_features,
-    resolve_topic,
-    save_manifest,
-    slugify,
-)
 from attune_help.preamble import get_preamble  # noqa: F401
-from attune_help.staleness import (
-    DocStaleness,
-    FeatureStaleness,
-    StalenessReport,
-    build_doc_footer,
-    check_staleness,
-    compute_semantic_hash,
-    compute_source_hash,
-    parse_doc_footer,
-)
 from attune_help.storage import LocalFileStorage, SessionStorage
 
 __all__ = [
@@ -48,26 +27,14 @@ __all__ = [
     "TemplateContext",
     "get_demo_path",
     "get_preamble",
-    # Manifest
-    "Feature",
-    "FeatureManifest",
-    "Manifest",
-    "is_safe_feature_name",
-    "load_manifest",
-    "match_files_to_features",
-    "resolve_topic",
-    "save_manifest",
-    "slugify",
-    # Staleness
-    "DocStaleness",
-    "FeatureStaleness",
-    "StalenessReport",
-    "build_doc_footer",
-    "check_staleness",
-    "compute_semantic_hash",
-    "compute_source_hash",
-    "parse_doc_footer",
 ]
+
+# Manifest, staleness, and freshness moved to attune-author. Importing
+# them through ``attune_help.*`` still works via the deprecated shims
+# in this package (they emit ``DeprecationWarning`` on first import).
+# The shims are not eagerly imported here so that a plain
+# ``import attune_help`` stays warning-free during the deprecation
+# window.
 
 try:
     from importlib.metadata import version

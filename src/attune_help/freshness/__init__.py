@@ -1,14 +1,28 @@
-"""Symbol extraction for semantic-freshness staleness detection (Phase 1).
+"""DEPRECATED: moved to :mod:`attune_author.freshness`.
 
-Known limitation — re-export shims:
-    Pure re-export modules (``from pkg import *`` with no definitions) produce
-    zero symbols. If a feature's ``files:`` list includes only shim files,
-    ``compute_semantic_hash`` will return SHA-256("") for that feature.
-    Mitigation: list the upstream implementation file alongside the shim in
-    ``features.yaml``, or use Option B (per-symbol frontmatter) in a future
-    release. Tracked for Phase 2 evaluation.
+Re-exported here for one minor release of attune-help so existing
+imports keep working while consumers migrate. The shim emits
+:class:`DeprecationWarning` on import.
+
+Update your imports::
+
+    from attune_author.freshness import SymbolExtractor, SymbolRecord
+
+This shim will be removed in the next minor release of attune-help
+(target: 2026-07-07 — see CHANGELOG).
 """
 
-from attune_help.freshness.symbols import SymbolExtractor, SymbolRecord
+from __future__ import annotations
+
+import warnings
+
+from attune_author.freshness import SymbolExtractor, SymbolRecord
 
 __all__ = ["SymbolExtractor", "SymbolRecord"]
+
+warnings.warn(
+    "attune_help.freshness is deprecated; import from attune_author.freshness. "
+    "This shim will be removed in the next minor release of attune-help.",
+    DeprecationWarning,
+    stacklevel=2,
+)
