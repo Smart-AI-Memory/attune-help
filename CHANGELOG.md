@@ -2,6 +2,46 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.11.0 — 2026-05-08
+
+### Changed (deprecation)
+
+- **`attune_help.manifest`, `attune_help.staleness`, and
+  `attune_help.freshness` (+ `attune_help.freshness.symbols`) moved to
+  `attune_author.*`.** The original modules now ship as thin re-export
+  shims that emit `DeprecationWarning` on import. Update your imports:
+
+      # before
+      from attune_help.manifest import Feature, FeatureManifest
+
+      # after
+      from attune_author.manifest import Feature, FeatureManifest
+
+  The shims will be **removed in the next minor release of
+  attune-help (target: 2026-07-07)**. After that release, importing
+  from the old paths raises `ImportError`.
+
+- The package no longer re-exports manifest / staleness symbols from
+  its top-level (`attune_help.Feature`, `attune_help.StalenessReport`,
+  …). Import them from `attune_author` directly. A plain
+  `import attune_help` is now warning-free during the deprecation
+  window.
+
+### Added
+
+- **`attune_help.adapters.rag.AttuneHelpAdapter`** — implements
+  `attune_rag.corpus.help_adapter.HelpCorpusAdapter` so attune-rag's
+  `AttuneHelpCorpus` can be built without a dynamic import of
+  attune-help. Pairs with `attune-rag` 0.1.10's typed adapter
+  protocol. Closes finding **#1** (ADR-002 violation) of the
+  2026-05-07 architecture review.
+
+### Dependencies
+
+- New required: `attune-author>=0.7.0`. Transitional — required only
+  while the deprecated shims live. Removed together with the shims
+  on 2026-07-07.
+
 ## 0.10.0 — 2026-04-30
 
 ### Added

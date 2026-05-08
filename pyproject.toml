@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "attune-help"
-version = "0.10.2"
+version = "0.11.0"
 description = "Lightweight help runtime with progressive depth and audience adaptation."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -27,6 +27,13 @@ classifiers = [
 ]
 dependencies = [
     "python-frontmatter>=1.0.0",
+    # Transitional: manifest/staleness/freshness moved to attune-author
+    # in 0.11.0. ``attune_help.manifest``/``staleness``/``freshness``
+    # are deprecated shims that re-export from attune-author. Required
+    # so existing imports keep working through the deprecation window.
+    # Drop this dep when the shims are removed (target 2026-07-07) and
+    # restore tech.md's zero-required-deps constraint.
+    "attune-author>=0.7.0",
 ]
 
 [project.optional-dependencies]
