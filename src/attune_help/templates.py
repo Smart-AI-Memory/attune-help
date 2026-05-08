@@ -20,6 +20,13 @@ logger = logging.getLogger(__name__)
 _CROSS_LINKS_CACHE: dict[str, dict[str, Any]] = {}
 _CROSS_LINKS_LOCK = threading.Lock()
 
+# Parsed-template cache: keyed by ``(str(filepath), mtime_ns)`` so an
+# edit-and-reload picks up the new file automatically. Without this,
+# every ``populate()`` call re-parsed the markdown + frontmatter, which
+# made template lookups O(file-size) per request in long-lived processes.
+_PARSED_TEMPLATE_CACHE: dict[tuple[str, int], dict[str, Any]] = {}
+_PARSED_TEMPLATE_LOCK = threading.Lock()
+
 
 def invalidate_cross_links_cache() -> None:
     """Clear the cross-links cache so the next lookup re-reads disk.
@@ -29,6 +36,17 @@ def invalidate_cross_links_cache() -> None:
     """
     with _CROSS_LINKS_LOCK:
         _CROSS_LINKS_CACHE.clear()
+
+
+def invalidate_template_cache() -> None:
+    """Clear the parsed-template cache.
+
+    Normally not needed — the cache key includes mtime so file edits
+    invalidate themselves. Useful for tests that mock filesystems or
+    for processes that need a hard reset across all templates.
+    """
+    with _PARSED_TEMPLATE_LOCK:
+        _PARSED_TEMPLATE_CACHE.clear()
 
 
 @dataclass(frozen=True)
@@ -78,18 +96,24 @@ class PopulatedTemplate:
 # Template file resolution
 # ------------------------------------------------------------------
 
+# Maps the 3-letter `{prefix}-{slug}` template-id prefix to the
+# directory the matching template lives in. Mirrors the enum in
+# `attune-rag` at `src/attune_rag/editor/template_schema.json`. Adding
+# a kind to that enum implies adding both an entry here AND the
+# corresponding subdirectory under `templates/`.
 _PREFIX_MAP = {
+    "com": "comparisons",
+    "con": "concepts",
     "err": "errors",
-    "war": "warnings",
-    "tip": "tips",
-    "ref": "references",
-    "tas": "tasks",
     "faq": "faqs",
+    "gui": "guides",
     "not": "notes",
     "qui": "quickstarts",
-    "con": "concepts",
+    "ref": "references",
+    "tas": "tasks",
+    "tip": "tips",
     "tro": "troubleshooting",
-    "com": "comparisons",
+    "war": "warnings",
 }
 
 
@@ -132,12 +156,32 @@ def _find_template_file(
 def _parse_template_file(filepath: Path) -> dict[str, Any]:
     """Parse a template file into structured data.
 
+    Cached by ``(filepath, mtime_ns)`` so repeated ``populate()`` calls
+    on the same template don't re-read and re-parse the file. The mtime
+    component means filesystem edits invalidate the cache automatically;
+    no explicit ``invalidate_template_cache()`` call is needed in normal
+    operation.
+
     Args:
         filepath: Path to the template .md file.
 
     Returns:
         Dict with frontmatter fields and parsed sections.
     """
+    try:
+        mtime_ns = filepath.stat().st_mtime_ns
+    except OSError:
+        # Path no longer readable; fall through to the parser so the
+        # caller sees the same exception they would have seen before.
+        mtime_ns = -1
+
+    cache_key = (str(filepath), mtime_ns)
+    if mtime_ns != -1:
+        with _PARSED_TEMPLATE_LOCK:
+            cached = _PARSED_TEMPLATE_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
+
     import frontmatter as fm
 
     post = fm.load(str(filepath))
@@ -170,7 +214,7 @@ def _parse_template_file(filepath: Path) -> dict[str, Any]:
     else:
         tags = list(tags_raw)
 
-    return {
+    parsed: dict[str, Any] = {
         "type": post.get("type", ""),
         "subtype": post.get("subtype", ""),
         "name": post.get("name", filepath.stem),
@@ -182,6 +226,10 @@ def _parse_template_file(filepath: Path) -> dict[str, Any]:
         "sections": sections,
         "body": post.content,
     }
+    if mtime_ns != -1:
+        with _PARSED_TEMPLATE_LOCK:
+            _PARSED_TEMPLATE_CACHE[cache_key] = parsed
+    return parsed
 
 
 # ------------------------------------------------------------------
@@ -190,7 +238,14 @@ def _parse_template_file(filepath: Path) -> dict[str, Any]:
 
 
 def _load_cross_links(generated_dir: Path) -> dict[str, Any]:
-    """Load cross-links index with caching.
+    """Load cross-links index with mtime-aware caching.
+
+    Cached entries store the file's mtime alongside the parsed data.
+    When ``cross_links.json`` is rewritten (e.g. by a regen run in a
+    long-lived process), its mtime changes and the next call reloads
+    automatically. Without this, callers had to remember to invoke
+    :func:`invalidate_cross_links_cache` after every regen, and
+    forgetting it served stale results until process restart.
 
     Args:
         generated_dir: Path to generated/ directory.
@@ -199,26 +254,32 @@ def _load_cross_links(generated_dir: Path) -> dict[str, Any]:
         Parsed cross_links.json, or empty dict.
     """
     cache_key = str(generated_dir)
-    with _CROSS_LINKS_LOCK:
-        if cache_key in _CROSS_LINKS_CACHE:
-            return _CROSS_LINKS_CACHE[cache_key]
+    index_path = generated_dir / "cross_links.json"
+    try:
+        mtime_ns = index_path.stat().st_mtime_ns
+    except FileNotFoundError:
+        # File doesn't exist — return empty without caching so a later
+        # regen that creates the file is picked up on the next call.
+        return {}
+    except OSError as e:
+        logger.warning("Cannot stat cross_links.json: %s", e)
+        return {}
 
-        index_path = generated_dir / "cross_links.json"
-        if not index_path.exists():
-            return {}
+    with _CROSS_LINKS_LOCK:
+        cached = _CROSS_LINKS_CACHE.get(cache_key)
+        if cached is not None and cached.get("__mtime_ns") == mtime_ns:
+            return cached["__data"]
 
         try:
-            data = json.loads(
-                index_path.read_text(encoding="utf-8"),
-            )
-            _CROSS_LINKS_CACHE[cache_key] = data
-            return data
+            data = json.loads(index_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(
                 "Failed to load cross_links.json: %s",
                 e,
             )
             return {}
+        _CROSS_LINKS_CACHE[cache_key] = {"__mtime_ns": mtime_ns, "__data": data}
+        return data
 
 
 def _resolve_related(
