@@ -15,6 +15,8 @@ import warnings
 
 import pytest
 
+pytest.importorskip("attune_author")  # Shim tests require the [authoring] extra.
+
 SHIMS = [
     "attune_help.manifest",
     "attune_help.staleness",

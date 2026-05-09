@@ -28,13 +28,44 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install with dev extra
+      - name: Install with dev + authoring extras
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,authoring]"
 
       - name: Run ruff
         run: python -m ruff check src/ tests/
 
-      - name: Run tests
+      - name: Run tests (with coverage on ubuntu x py3.11)
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.11" ]; then
+            python -m pytest tests/ -v --tb=short --cov --cov-report=term-missing --cov-report=xml
+          else
+            python -m pytest tests/ -v --tb=short
+          fi
+        shell: bash
+
+      - name: Upload coverage artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-attune-help
+          path: coverage.xml
+
+  test-no-authoring-extra:
+    name: zero-dep contract (no [authoring])
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install with dev extra ONLY (no authoring)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run tests; shim tests must skip cleanly via importorskip
         run: python -m pytest tests/ -v --tb=short
