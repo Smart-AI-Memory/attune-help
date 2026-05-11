@@ -27,18 +27,20 @@ classifiers = [
 ]
 dependencies = [
     "python-frontmatter>=1.0.0",
-    # Transitional: manifest/staleness/freshness moved to attune-author
-    # in 0.11.0. ``attune_help.manifest``/``staleness``/``freshness``
-    # are deprecated shims that re-export from attune-author. Required
-    # so existing imports keep working through the deprecation window.
-    # Drop this dep when the shims are removed (target 2026-07-07) and
-    # restore tech.md's zero-required-deps constraint.
-    "attune-author>=0.7.0",
 ]
 
 [project.optional-dependencies]
 rich = ["rich>=13.0.0"]
 plugin = ["mcp>=0.9.0"]
+# Transitional: manifest/staleness/freshness moved to attune-author in
+# 0.11.0. ``attune_help.manifest``/``staleness``/``freshness`` are
+# deprecated shims that re-export from attune-author. Install with
+# ``pip install attune-help[authoring]`` to keep the shims working.
+# Restored tech.md ADR-002 (zero required deps) on 2026-05-08.
+# Sunset target: 2026-07-07 — drop the shims and this extra entirely.
+authoring = [
+    "attune-author>=0.7.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -61,3 +63,26 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 attune_help = ["templates/**/*.md", "templates/**/*.json", "demos/**/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "slow: tests that create real venvs or otherwise take >1s",
+]
+
+[tool.coverage.run]
+source = ["src/attune_help"]
+branch = true
+omit = ["*/tests/*", "*/conftest.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 81
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

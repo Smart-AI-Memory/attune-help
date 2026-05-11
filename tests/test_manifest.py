@@ -5,6 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+
+pytest.importorskip("attune_author")  # Shim tests require the [authoring] extra.
+
 from attune_help.manifest import (
     Feature,
     FeatureManifest,

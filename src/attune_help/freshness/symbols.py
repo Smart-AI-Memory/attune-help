@@ -16,7 +16,14 @@ from __future__ import annotations
 
 import warnings
 
-from attune_author.freshness.symbols import SymbolExtractor, SymbolRecord
+try:
+    from attune_author.freshness.symbols import SymbolExtractor, SymbolRecord
+except ImportError as exc:  # pragma: no cover
+    raise ImportError(
+        "attune_help.freshness.symbols is a deprecated shim that requires "
+        "the 'authoring' extra. Install with: pip install attune-help[authoring]. "
+        "Or migrate your imports to attune_author.freshness.symbols directly."
+    ) from exc
 
 __all__ = ["SymbolExtractor", "SymbolRecord"]
 

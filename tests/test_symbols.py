@@ -4,12 +4,15 @@ Tests for SymbolExtractor / SymbolRecord.
 Each test maps to a numbered acceptance criterion in
 docs/specs/phase-1-semantic-freshness-spec.md.
 """
+
 from __future__ import annotations
 
 import textwrap
 from pathlib import Path
 
 import pytest
+
+pytest.importorskip("attune_author")  # Shim tests require the [authoring] extra.
 
 from attune_help.freshness import SymbolExtractor
 
@@ -128,14 +131,12 @@ def test_signature_change_does_not_affect_unrelated_template(tmp_path, extractor
 
     # Now change `greet` only
     file.write_text(
-        textwrap.dedent(
-            """
+        textwrap.dedent("""
             def greet(name: str, formal: bool = False) -> str:
                 return name
             def farewell(name: str) -> str:
                 return name
-            """
-        ),
+            """),
         encoding="utf-8",
     )
     greet_v2 = extractor.extract_one(file, "greet")

@@ -16,16 +16,23 @@ from __future__ import annotations
 
 import warnings
 
-from attune_author.staleness import (
-    DocStaleness,
-    FeatureStaleness,
-    StalenessReport,
-    build_doc_footer,
-    check_staleness,
-    compute_semantic_hash,
-    compute_source_hash,
-    parse_doc_footer,
-)
+try:
+    from attune_author.staleness import (
+        DocStaleness,
+        FeatureStaleness,
+        StalenessReport,
+        build_doc_footer,
+        check_staleness,
+        compute_semantic_hash,
+        compute_source_hash,
+        parse_doc_footer,
+    )
+except ImportError as exc:  # pragma: no cover
+    raise ImportError(
+        "attune_help.staleness is a deprecated shim that requires the "
+        "'authoring' extra. Install with: pip install attune-help[authoring]. "
+        "Or migrate your imports to attune_author.staleness directly."
+    ) from exc
 
 __all__ = [
     "DocStaleness",
