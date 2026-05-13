@@ -20,20 +20,14 @@ The `slow` marker covers tests that create real venvs
 (`test_zero_dep_install.py`). Skip with `pytest -m "not slow"` for fast
 iteration.
 
-## LLM mocking standard
+## LLM mocking standard, `live` marker, CI guard, cost policy
 
-attune-help itself makes no LLM calls. Cross-layer integration tests that
-*could* exercise an LLM follow the **attune-author reference pattern**:
+See **`testing-conventions.md`** in the attune workspace umbrella —
+the canonical reference (mocking pattern, `live` marker semantics, CI
+guard expectation, cost & quota policy). Applies to all four layers.
 
-- Strip `ANTHROPIC_API_KEY` via an autouse fixture so a misconfigured
-  test never reaches the network.
-- Patch `anthropic.Anthropic` at import time, not at call site.
-- Reset module-level singletons (e.g. `_RagPipeline`) between tests with
-  an autouse fixture so a leaked patch doesn't poison later tests.
-
-See `attune-author/tests/conftest.py` (`_lenient_polish_by_default`,
-`_reset_rag_pipeline`). Pass 2 of the test-strategy spec will formalize
-this into a shared `docs/testing-conventions.md` across layers.
+attune-help itself makes no LLM calls today; the `live` marker is
+registered in `pyproject.toml` so future tests have a consistent home.
 
 ## What's tested vs. not
 

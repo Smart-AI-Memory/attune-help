@@ -66,9 +66,10 @@ attune_help = ["templates/**/*.md", "templates/**/*.json", "demos/**/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra -m 'not live'"
 markers = [
     "slow: tests that create real venvs or otherwise take >1s",
+    "live: opt-in tests that hit a real LLM API. Skipped by default; require ANTHROPIC_API_KEY and any test-specific env flags.",
 ]
 
 [tool.coverage.run]
