@@ -2,6 +2,57 @@
 
 All notable changes to `attune-help` are documented here.
 
+## 0.11.1 — 2026-05-25
+
+### Fixed
+
+- **ADR-002 restored.** `attune-author` is no longer a required dependency
+  of `attune-help` — moved back to the `[authoring]` optional extra. The
+  0.11.0 release note that declared `attune-author>=0.7.0` as a new
+  required dep was a regression against ADR-002 ("zero required deps
+  beyond `python-frontmatter`"); this release reverses it. Users who
+  consume the deprecated `attune_help.manifest` / `staleness` /
+  `freshness` shims now get a clear `ImportError` pointing them at
+  `pip install attune-help[authoring]` instead of a transitive install.
+
+### Added
+
+- **44 new tests across 5 new files** (309 passing total): zero-dep
+  install smoke test (real venv, `@pytest.mark.slow`), reusable
+  `StorageProtocolTester` mixin, direct `_find_template_file` /
+  `_parse_template_file` / cache tests (incl. CWE-22 path-traversal
+  guard), `AttuneHelpAdapter` protocol-conformance tests, and direct
+  unit tests for `_require_str` + the MCP engine/server factories.
+- **Branch-coverage gate at 81%** (currently 82.31%), enforced via
+  `pyproject.toml`'s `[tool.coverage.*]` + a coverage cell on the
+  `ubuntu-latest × py3.11` matrix entry in CI. Coverage report
+  uploaded as an artifact.
+- **New `test-no-authoring-extra` CI job** that verifies the
+  `pytest.importorskip("attune_author")` skip path actually works
+  when the optional extra isn't installed.
+- **`live` pytest marker registered** (deselected by default via
+  `addopts = "-ra -m 'not live'"`). attune-help makes no LLM calls
+  today; the marker is reserved so future tests have a consistent home.
+- **CI guard against `ANTHROPIC_API_KEY` in the default test env** —
+  fails fast as a regression alarm in both the matrix job and the
+  `test-no-authoring-extra` job.
+
+### Changed
+
+- `tests/README.md` replaces its inline LLM-mocking section with a
+  pointer to the workspace-level `testing-conventions.md` (umbrella
+  spec). Single source of truth across the attune-* family.
+
+### Dependencies
+
+- **Correction:** the 0.11.0 entry incorrectly declared
+  `attune-author>=0.7.0` as a new *required* dependency. It was always
+  intended to be the `[authoring]` extra; 0.11.0 shipped with it
+  required by mistake, and 0.11.1 restores the intended shape. No
+  action needed for users who installed `attune-help[authoring]`;
+  users who installed bare `attune-help` and hit shim ImportErrors
+  should add the `[authoring]` extra explicitly.
+
 ## 0.11.0 — 2026-05-08
 
 ### Changed (deprecation)
