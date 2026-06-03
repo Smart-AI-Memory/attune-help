@@ -56,7 +56,7 @@ _TEMPLATES_DIR = _REPO_ROOT / "src" / "attune_help" / "templates"
 _FIXTURES_DIR = _TEMPLATES_DIR / "fixtures"
 _SUMMARIES_FILE = _TEMPLATES_DIR / "summaries.json"
 
-_DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+_DEFAULT_MODEL = "claude-haiku-4-5"
 _MAX_TOKENS = 2000
 
 _SYSTEM_PROMPT = """\

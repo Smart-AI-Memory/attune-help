@@ -57,7 +57,7 @@ _SUMMARIES_FEATURE_FILE = _TEMPLATES_DIR / "summaries.json"
 _SUMMARIES_PATH_FILE = _TEMPLATES_DIR / "summaries_by_path.json"
 _DIFF_HINTS_FILE = _REPO_ROOT / "scripts" / "differentiation_hints.yaml"
 
-_DEFAULT_MODEL = "claude-haiku-4-5-20251001"
+_DEFAULT_MODEL = "claude-haiku-4-5"
 _MAX_TOKENS = 400
 _BODY_CHAR_LIMIT = 2500
 

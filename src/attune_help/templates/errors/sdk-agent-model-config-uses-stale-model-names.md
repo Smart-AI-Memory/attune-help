@@ -14,7 +14,7 @@ SDK agent MODEL_CONFIG uses stale model names
 
 ## Root Cause
 
-The `MODEL_CONFIG` dict in `agents/release/release_models.py` references `claude-3-5-haiku-latest` which returns 404. The current Haiku model ID is `claude-haiku-4-5-20251001`. Check model IDs against the Anthropic API when tier escalation fails at CHEAP.
+The `MODEL_CONFIG` dict in `agents/release/release_models.py` references `claude-3-5-haiku-latest` which returns 404. The current Haiku model ID is `claude-haiku-4-5`. Check model IDs against the Anthropic API when tier escalation fails at CHEAP.
 
 ## Resolution
 
