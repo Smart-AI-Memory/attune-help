@@ -15,12 +15,19 @@ from attune_help.engine import (
     TemplateContext,
 )
 from attune_help.preamble import get_preamble  # noqa: F401
-from attune_help.storage import LocalFileStorage, SessionStorage
+from attune_help.storage import (
+    BackendSessionStorage,
+    KVBackend,
+    LocalFileStorage,
+    SessionStorage,
+)
 
 __all__ = [
     # Engine
     "AudienceProfile",
+    "BackendSessionStorage",
     "HelpEngine",
+    "KVBackend",
     "LocalFileStorage",
     "PopulatedTemplate",
     "SessionStorage",

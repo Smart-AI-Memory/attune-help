@@ -46,6 +46,28 @@ class SessionStorage(Protocol):
         ...
 
 
+class KVBackend(Protocol):
+    """Minimal key/value backend for :class:`BackendSessionStorage`.
+
+    Any object with these two methods works — an ``attune_redis``
+    backend, attune's ``MemoryBackend``, or a hand-rolled dict wrapper.
+    attune-help imports none of those; the integrator injects an
+    instance, keeping the runtime dependency-free (tech.md ADR-002).
+
+    ``stash`` returns ``True`` on a successful write, ``False`` (or
+    raises) on failure. ``retrieve`` returns the stored string, or
+    ``None`` when the key is absent.
+    """
+
+    def stash(self, key: str, value: str) -> bool:
+        """Persist ``value`` under ``key``. Return True on success."""
+        ...
+
+    def retrieve(self, key: str) -> str | None:
+        """Return the value for ``key``, or None if absent."""
+        ...
+
+
 def _defaults() -> dict[str, Any]:
     """Fresh session defaults."""
     return {
@@ -91,6 +113,43 @@ def _migrate_legacy(data: dict[str, Any]) -> dict[str, Any]:
         "topics": topics,
         "order": order,
     }
+
+
+def _serialize(state: dict[str, Any]) -> str:
+    """Render a session dict as a timestamped JSON line.
+
+    Shared by the file and backend storages so both persist the exact
+    same schema (``last_topic``, ``depth_level``, ``topics``, ``order``,
+    ``timestamp``).
+    """
+    payload = {
+        "last_topic": state.get("last_topic"),
+        "depth_level": state.get("depth_level", 0),
+        "topics": state.get("topics", {}),
+        "order": state.get("order", []),
+        "timestamp": time.time(),
+    }
+    return json.dumps(payload) + "\n"
+
+
+def _deserialize(raw: str | None, ttl_seconds: float) -> dict[str, Any]:
+    """Parse a stored payload, applying TTL expiry and legacy migration.
+
+    Returns fresh defaults when ``raw`` is missing, malformed, or older
+    than ``ttl_seconds``. Shared by the file and backend storages.
+    """
+    if raw is None:
+        return _defaults()
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return _defaults()
+    if not isinstance(data, dict):
+        return _defaults()
+    ts = data.get("timestamp", 0)
+    if time.time() - ts > ttl_seconds:
+        return _defaults()
+    return _migrate_legacy(data)
 
 
 class LocalFileStorage:
@@ -182,11 +241,7 @@ class LocalFileStorage:
         try:
             if not path.exists():
                 return defaults
-            data = json.loads(path.read_text(encoding="utf-8"))
-            ts = data.get("timestamp", 0)
-            if time.time() - ts > self._ttl:
-                return defaults
-            return _migrate_legacy(data)
+            return _deserialize(path.read_text(encoding="utf-8"), self._ttl)
         except (json.JSONDecodeError, OSError, KeyError):
             return defaults
 
@@ -205,17 +260,86 @@ class LocalFileStorage:
         try:
             self._dir.mkdir(parents=True, exist_ok=True)
             tmp = path.with_suffix(".json.tmp")
-            payload = {
-                "last_topic": state.get("last_topic"),
-                "depth_level": state.get("depth_level", 0),
-                "topics": state.get("topics", {}),
-                "order": state.get("order", []),
-                "timestamp": time.time(),
-            }
-            tmp.write_text(
-                json.dumps(payload) + "\n",
-                encoding="utf-8",
-            )
+            tmp.write_text(_serialize(state), encoding="utf-8")
             tmp.replace(path)  # replace() is cross-platform
         except OSError as e:
             logger.warning("Session write failed: %s", e)
+
+
+class BackendSessionStorage:
+    """Session storage backed by an injected key/value backend.
+
+    A drop-in :class:`SessionStorage` that delegates persistence to any
+    :class:`KVBackend` (an ``attune_redis`` backend, attune's
+    ``MemoryBackend``, or a custom wrapper). Useful when session state
+    must survive across hosts/processes rather than a single machine's
+    ``~/.attune-help/sessions/`` directory.
+
+    Schema, TTL, and legacy migration are identical to
+    :class:`LocalFileStorage` — only the transport differs (a backend
+    key instead of a file). attune-help imports no backend itself, so
+    this adds no required dependency (tech.md ADR-002).
+
+    Args:
+        backend: The key/value backend to delegate to.
+        key_prefix: Namespace prepended to every key. Defaults to
+            ``"helpsess"``.
+        ttl_seconds: Session time-to-live. Defaults to 4 hours, matching
+            :class:`LocalFileStorage`.
+
+    Example::
+
+        from attune_help import BackendSessionStorage, HelpEngine
+        storage = BackendSessionStorage(my_redis_backend)
+        engine = HelpEngine(storage=storage)
+    """
+
+    def __init__(
+        self,
+        backend: KVBackend,
+        *,
+        key_prefix: str = "helpsess",
+        ttl_seconds: int = _SESSION_TTL_SECONDS,
+    ) -> None:
+        self._backend = backend
+        self._prefix = key_prefix
+        self._ttl = ttl_seconds
+
+    def _key(self, user_id: str) -> str:
+        """Backend key for a user's session."""
+        return f"{self._prefix}:{user_id}"
+
+    def get_session(self, user_id: str) -> dict[str, Any]:
+        """Load session state from the backend.
+
+        Returns fresh defaults on a miss, a malformed/expired payload, or
+        any backend error — never raises into the runtime (matches
+        :class:`LocalFileStorage`).
+
+        Args:
+            user_id: User identifier.
+
+        Returns:
+            Session state dict, or fresh defaults.
+        """
+        try:
+            raw = self._backend.retrieve(self._key(user_id))
+        except Exception as e:  # noqa: BLE001 - backend errors must not propagate
+            logger.warning("Session backend read failed: %s", e)
+            return _defaults()
+        return _deserialize(raw, self._ttl)
+
+    def set_session(self, user_id: str, state: dict[str, Any]) -> None:
+        """Persist session state to the backend.
+
+        Logs and no-ops on any backend failure (matches
+        :class:`LocalFileStorage`); never raises into the runtime.
+
+        Args:
+            user_id: User identifier.
+            state: Session state dict to persist.
+        """
+        try:
+            self._backend.stash(self._key(user_id), _serialize(state))
+        except Exception as e:  # noqa: BLE001 - backend errors must not propagate
+            logger.warning("Session backend write failed: %s", e)

@@ -213,15 +213,41 @@ HelpEngine(
 
 ### `SessionStorage` Protocol
 
-Implement custom storage backends:
+Session depth state defaults to `LocalFileStorage` (per-user JSON files
+under `~/.attune-help/sessions/`, 4-hour TTL). Implement the protocol to
+plug in any backend:
 
 ```python
 from attune_help import SessionStorage
 
-class RedisStorage(SessionStorage):
-    def load(self, user_id: str) -> dict: ...
-    def save(self, user_id: str, state: dict) -> None: ...
+class MyStorage(SessionStorage):
+    def get_session(self, user_id: str) -> dict: ...
+    def set_session(self, user_id: str, state: dict) -> None: ...
 ```
+
+#### `BackendSessionStorage` — bring your own key/value store
+
+For cross-host continuity without writing the protocol yourself, inject
+any key/value backend (an `attune_redis` backend, attune's
+`MemoryBackend`, or a custom object exposing `stash`/`retrieve`).
+attune-help imports none of these, so this adds **no required
+dependency** (ADR-002 stays intact):
+
+```python
+from attune_help import BackendSessionStorage, HelpEngine
+
+class KVBackend:                      # your store — e.g. wrap Redis
+    def stash(self, key: str, value: str) -> bool: ...
+    def retrieve(self, key: str) -> str | None: ...
+
+storage = BackendSessionStorage(my_backend)   # same schema + 4h TTL
+engine = HelpEngine(storage=storage)
+```
+
+Schema, TTL, and legacy migration match `LocalFileStorage` exactly —
+only the transport (a backend key instead of a file) differs. Backend
+errors never propagate into the runtime: reads fall back to defaults,
+writes log-and-continue.
 
 ## Staleness Detection
 
