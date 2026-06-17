@@ -33,7 +33,7 @@ Usage
    uv run python scripts/repolish_low_p1.py --dry-run
 
    # Pass a cheaper model through to polish
-   uv run python scripts/repolish_low_p1.py --model claude-haiku-4-5-20251001
+   uv run python scripts/repolish_low_p1.py --model claude-haiku-4-5
 
 Requires ``attune_rag``, ``pyyaml``, and the ``anthropic``
 SDK (only for the polish phase). ``ANTHROPIC_API_KEY``
@@ -235,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--model",
-        default="claude-haiku-4-5-20251001",
+        default="claude-haiku-4-5",
         help="Passed through to polish_summaries.py.",
     )
     parser.add_argument(

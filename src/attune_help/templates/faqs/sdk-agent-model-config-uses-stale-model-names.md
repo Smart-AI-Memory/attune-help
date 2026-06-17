@@ -9,7 +9,7 @@ source: .claude/CLAUDE.md
 
 ## Answer
 
-The `MODEL_CONFIG` dict in `agents/release/release_models.py` references `claude-3-5-haiku-latest` which returns 404. The current Haiku model ID is `claude-haiku-4-5-20251001`.
+The `MODEL_CONFIG` dict in `agents/release/release_models.py` references `claude-3-5-haiku-latest` which returns 404. The current Haiku model ID is `claude-haiku-4-5`.
 
 **How to fix:**
 - Check model IDs against the Anthropic API when tier escalation fails at CHEAP
