@@ -1,0 +1,5 @@
+# Vendored Claude Code session hooks: byte-identical copies of attune-ai's
+# canonical plugin/hooks/. The drift-guard test hashes each file; CRLF
+# checkouts on Windows would change the bytes and fail the guard. Pin LF.
+.claude/hooks/*.py text eol=lf
+.claude/hooks/.canonical-sha256 text eol=lf
