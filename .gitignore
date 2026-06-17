@@ -42,8 +42,11 @@ Thumbs.db
 .env.local
 .pypirc
 
-# Local planning artifacts
-.claude/
+# Ignore .claude/ cruft (plans, worktrees, settings.local.json) but track
+# the vendored session hooks + their wiring (see specs/sibling-claude-hooks/).
+.claude/*
+!.claude/hooks/
+!.claude/settings.json
 
 # Backup sidecars left by repolish_low_p1.py
 *.pre-repolish.bak
