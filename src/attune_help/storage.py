@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from pathlib import Path
 from typing import Any, Protocol
@@ -16,6 +17,16 @@ from typing import Any, Protocol
 logger = logging.getLogger(__name__)
 
 _SESSION_TTL_SECONDS = 4 * 3600  # 4 hours
+
+# Default on-disk location for session files. Overridable via the
+# ``ATTUNE_HELP_SESSIONS_DIR`` env var so tests/CI never touch the
+# developer's real ``~/.attune-help/sessions/``.
+_DEFAULT_SESSIONS_DIR = "~/.attune-help/sessions"
+
+
+def _default_storage_dir() -> Path:
+    """Resolve the default session directory (env-overridable)."""
+    return Path(os.environ.get("ATTUNE_HELP_SESSIONS_DIR", _DEFAULT_SESSIONS_DIR)).expanduser()
 
 
 class SessionStorage(Protocol):
@@ -161,7 +172,8 @@ class LocalFileStorage:
 
     Args:
         storage_dir: Directory for session files.
-            Defaults to ~/.attune-help/sessions/.
+            Defaults to ~/.attune-help/sessions/ (overridable via the
+            ``ATTUNE_HELP_SESSIONS_DIR`` env var).
         ttl_seconds: Session time-to-live in seconds.
             Defaults to 4 hours.
     """
@@ -172,7 +184,7 @@ class LocalFileStorage:
         ttl_seconds: int = _SESSION_TTL_SECONDS,
     ) -> None:
         if storage_dir is None:
-            self._dir = Path("~/.attune-help/sessions").expanduser()
+            self._dir = _default_storage_dir()
         else:
             self._dir = Path(storage_dir)
         self._ttl = ttl_seconds
