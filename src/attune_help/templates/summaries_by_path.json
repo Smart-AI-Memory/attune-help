@@ -31,6 +31,7 @@
   "faqs/bug-predict-dangerous-eval-flags-subprocess-exec.md": "Predicts bug hotspots using cyclomatic complexity, change frequency, and pattern matching to detect dangerous eval, code injection vectors, bare-except patterns, and unfinished code paths.",
   "faqs/claude-code-plugin-is-platform-specific.md": "Clarifies that Skills, hooks, and MCP config are exclusive to Claude Code CLI and unavailable in Claude.ai web interface.",
   "faqs/push-specific-tags-not-tags.md": "Pushing specific Git tags individually instead of using the --tags flag to avoid rejecting already-existing tags.",
+  "quickstarts/plugin-first-steps.md": "Install the attune-ai plugin in Claude Code to get 17 auto-triggering skills for code review, security audits, bug prediction, and testing — driven by plain English with no CLI setup or API key.",
   "quickstarts/run-security-audit.md": "Scans codebase for OWASP vulnerabilities, hardcoded secrets, injection risks, eval/exec, path traversal, and CWE-identified issues in a security audit.",
   "quickstarts/skill-attune-hub.md": "Conversational entry point that discovers your workflow need through clarifying questions and intelligently routes you to the right skill without requiring command syntax or menu navigation.",
   "quickstarts/skill-bug-predict.md": "Predicts bug-prone code locations using cyclomatic complexity, change frequency hotspots, bare-except patterns, eval/exec detection, and unfinished code paths to surface defect risk before production.",
