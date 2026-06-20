@@ -41,10 +41,15 @@ def _load_fixtures() -> list[dict]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--gate", type=float, default=0.60,
-                        help="Per-feature P@1 gate (default: 0.60)")
-    parser.add_argument("--overall-gate", type=float, default=0.0,
-                        help="Overall P@1 gate — exit 1 if overall drops below (default: disabled)")
+    parser.add_argument(
+        "--gate", type=float, default=0.60, help="Per-feature P@1 gate (default: 0.60)"
+    )
+    parser.add_argument(
+        "--overall-gate",
+        type=float,
+        default=0.0,
+        help="Overall P@1 gate — exit 1 if overall drops below (default: disabled)",
+    )
     parser.add_argument(
         "--summaries",
         default="summaries_by_path.json",

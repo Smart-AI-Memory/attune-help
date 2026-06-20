@@ -43,7 +43,6 @@ must be set unless ``--dry-run`` is used.
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import shutil
 import subprocess
@@ -97,9 +96,7 @@ def _run_benchmark(summaries_file: str) -> list[FeatureResult]:
     try:
         from attune_rag import DirectoryCorpus, KeywordRetriever, RagPipeline
     except ImportError as exc:
-        raise RuntimeError(
-            "attune_rag not installed; run `uv pip install attune-rag`"
-        ) from exc
+        raise RuntimeError("attune_rag not installed; run `uv pip install attune-rag`") from exc
 
     corpus = DirectoryCorpus(
         root=_TEMPLATES_DIR,
@@ -215,9 +212,7 @@ def _overall(results: list[FeatureResult]) -> tuple[float, float, int, int, int]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="repolish_low_p1",
-        description=(
-            "Re-polish the N lowest-P@1 features and report the delta."
-        ),
+        description=("Re-polish the N lowest-P@1 features and report the delta."),
     )
     parser.add_argument(
         "--count",
@@ -281,10 +276,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     bp1, br3, btotal, bt1, bt3 = _overall(baseline)
-    print(
-        f"\nBaseline:    P@1={bp1:.1%} ({bt1}/{btotal})"
-        f"  R@3={br3:.1%} ({bt3}/{btotal})"
-    )
+    print(f"\nBaseline:    P@1={bp1:.1%} ({bt1}/{btotal})" f"  R@3={br3:.1%} ({bt3}/{btotal})")
     header = (
         f"\nExplicit cohort ({len(cohort)} features):"
         if args.features
@@ -335,9 +327,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if regressions:
-        print(
-            f"\n⚠ {regressions}/{len(target_features)} targeted features regressed."
-        )
+        print(f"\n⚠ {regressions}/{len(target_features)} targeted features regressed.")
         if backup:
             print(f"  Restore with:  cp {backup} {_SUMMARIES_PATH_FILE}")
         return args.regression_exit_code

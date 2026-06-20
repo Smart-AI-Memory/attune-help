@@ -113,9 +113,7 @@ def _symbols_from_source(source: str, path: Path) -> list[SymbolRecord]:
         tmp.unlink(missing_ok=True)
         # Patch file field back to the real path for readability
         return [
-            type(r)(
-                **{k: (str(path) if k == "file" else v) for k, v in vars(r).items()}
-            )
+            type(r)(**{k: (str(path) if k == "file" else v) for k, v in vars(r).items()})
             for r in records
         ]
     except SyntaxError:
@@ -222,11 +220,15 @@ def _print_report(
 
     print(f"\nSweep 2 — Determinism ({s2.total_features} features)")
     if s2.ok:
-        print(f"  {icon(True)}  {s2.total_features}/{s2.total_features} hashes identical across two runs")
+        print(
+            f"  {icon(True)}  {s2.total_features}/{s2.total_features} hashes identical across two runs"
+        )
     else:
-        print(f"  {icon(False)}  {len(s2.mismatches)} non-deterministic feature(s): {s2.mismatches}")
+        print(
+            f"  {icon(False)}  {len(s2.mismatches)} non-deterministic feature(s): {s2.mismatches}"
+        )
 
-    print(f"\nSweep 3 — HEAD vs HEAD^")
+    print("\nSweep 3 — HEAD vs HEAD^")
     if s3.skipped_reason:
         print(f"  –  skipped: {s3.skipped_reason}")
     else:
