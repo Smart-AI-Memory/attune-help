@@ -8,7 +8,7 @@ import pytest
 
 pytest.importorskip("attune_author")  # Shim tests require the [authoring] extra.
 
-from attune_help.manifest import (
+from attune_help.manifest import (  # noqa: E402  (import follows importorskip guard)
     Feature,
     FeatureManifest,
     is_safe_feature_name,
